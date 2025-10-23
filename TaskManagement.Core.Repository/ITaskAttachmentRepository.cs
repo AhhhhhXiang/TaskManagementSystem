@@ -9,6 +9,7 @@ namespace TaskManagement.Core.Repository
         void Add(TaskAttachment taskAttachment);
         void Update(TaskAttachment taskAttachment);
         void Delete(Int64? taskId);
+        bool DeleteImage(string path);
         void Save();
     }
 }

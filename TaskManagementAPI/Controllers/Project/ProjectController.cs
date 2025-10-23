@@ -402,22 +402,94 @@ namespace TaskManagementAPI.Controllers
             if (existingProject == null)
                 return new JsonResult(new { success = false, message = "Project not found." });
 
-            var projectUsers = _client.ProjectUserRepository
-                .GetAll()
-                .Where(pu => pu.ProjectId == projectId)
-                .ToList();
-
-            foreach (var pu in projectUsers)
+            try
             {
-                _client.ProjectUserRepository.Delete(pu.Id);
+                var projectTaskIds = _client.ProjectTaskRepository
+                    .GetAll()
+                    .Where(pt => pt.ProjectId == projectId)
+                    .Select(pt => pt.Id)
+                    .ToList();
+
+                foreach (var taskId in projectTaskIds)
+                {
+                    var taskAttachments = _client.TaskAttachmentRepository
+                        .GetAll()
+                        .Where(ta => ta.TaskId == taskId)
+                        .ToList();
+
+                    foreach (var attachment in taskAttachments)
+                    {
+                        if (!string.IsNullOrEmpty(attachment.FilePath))
+                        {
+                            try
+                            {
+                                var relativePath = attachment.FilePath.TrimStart('\\', '/');
+
+                                var fullPath = attachment.FilePath;
+
+                                bool fileDeleted = _client.TaskAttachmentRepository.DeleteImage(fullPath);
+
+                                if (!fileDeleted)
+                                {
+                                    Console.WriteLine($"Warning: File deletion failed for {fullPath}");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error deleting file for attachment {attachment.Id}: {ex.Message}");
+                            }
+                        }
+
+                        _client.TaskAttachmentRepository.Delete(attachment.Id);
+                    }
+                }
+                _client.TaskAttachmentRepository.Save();
+
+                foreach (var taskId in projectTaskIds)
+                {
+                    var taskUsers = _client.TaskUserRepository
+                        .GetAll()
+                        .Where(tu => tu.TaskId == taskId)
+                        .ToList();
+
+                    foreach (var taskUser in taskUsers)
+                    {
+                        _client.TaskUserRepository.Delete(taskUser.Id);
+                    }
+                }
+                _client.TaskUserRepository.Save();
+
+                var projectTasks = _client.ProjectTaskRepository
+                    .GetAll()
+                    .Where(pt => pt.ProjectId == projectId)
+                    .ToList();
+
+                foreach (var projectTask in projectTasks)
+                {
+                    _client.ProjectTaskRepository.Delete(projectTask.Id);
+                }
+                _client.ProjectTaskRepository.Save();
+
+                var projectUsers = _client.ProjectUserRepository
+                    .GetAll()
+                    .Where(pu => pu.ProjectId == projectId)
+                    .ToList();
+
+                foreach (var projectUser in projectUsers)
+                {
+                    _client.ProjectUserRepository.Delete(projectUser.Id);
+                }
+                _client.ProjectUserRepository.Save();
+
+                _client.ProjectRepository.Delete(existingProject.Id);
+                _client.ProjectRepository.Save();
+
+                return new JsonResult(new { success = true, message = "Project and all related data deleted successfully." });
             }
-
-            _client.ProjectUserRepository.Save();
-
-            _client.ProjectRepository.Delete(existingProject.Id);
-            _client.ProjectRepository.Save();
-
-            return new JsonResult(new { success = true, message = "Project deleted successfully." });
+            catch (Exception ex)
+            {
+                return new JsonResult(new { success = false, message = "An error occurred while deleting the project." });
+            }
         }
     }
 }
