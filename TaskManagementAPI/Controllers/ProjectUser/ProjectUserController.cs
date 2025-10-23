@@ -130,10 +130,45 @@ namespace TaskManagementAPI.Controllers
             if (projectUser == null)
                 return new JsonResult(new { success = false, message = "ProjectUser not found." });
 
-            _client.ProjectUserRepository.Delete(projectUser.Id);
-            _client.ProjectUserRepository.Save();
+            try
+            {
+                var projectTaskIds = _client.ProjectTaskRepository
+                    .GetAll()
+                    .Where(pt => pt.ProjectId == projectUser.ProjectId)
+                    .Select(pt => pt.Id)
+                    .ToList();
 
-            return new JsonResult(new { success = true, message = "ProjectUser deleted successfully." });
+                foreach (var taskId in projectTaskIds)
+                {
+                    var taskUsers = _client.TaskUserRepository
+                        .GetAll()
+                        .Where(tu => tu.TaskId == taskId && tu.UserId == projectUser.UserId)
+                        .ToList();
+
+                    foreach (var taskUser in taskUsers)
+                    {
+                        _client.TaskUserRepository.Delete(taskUser.Id);
+                    }
+                }
+                _client.TaskUserRepository.Save();
+
+                _client.ProjectUserRepository.Delete(projectUser.Id);
+                _client.ProjectUserRepository.Save();
+
+                return new JsonResult(new
+                {
+                    success = true,
+                    message = "User removed from project and all related task assignments deleted successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = "An error occurred while removing the user from the project."
+                });
+            }
         }
     }
 }

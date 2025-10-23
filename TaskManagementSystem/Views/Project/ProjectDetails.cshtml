@@ -2179,16 +2179,13 @@
             const data = await response.json();
 
             if (data.success) {
-                // Remove user from current task data
                 if (currentTask.taskUsers) {
                     currentTask.taskUsers = currentTask.taskUsers.filter(user => user.Id !== userId);
                 }
 
-                // Update UI
                 updateTaskUsersDisplay();
                 updateMembersDropdownSelection();
 
-                console.log('Member removed from task successfully');
                 return true;
             } else {
                 alert('Failed to remove member: ' + (data.message || 'Unknown error'));
@@ -2201,28 +2198,10 @@
         }
     }
 
-    async function addUserToProject(projectId, userId) {
-        const formData = new FormData();
-        formData.append('projectId', projectId);
-        formData.append('userId', userId);
-
-        const response = await fetch('/Project/AddProjectMember', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-        console.log('Add Project Member Response:', data);
-
-        if (!data.success) {
-            throw new Error(data.message || 'Failed to add user to project');
-        }
-
-        return data;
-    }
-
     function populateMembersList() {
         const membersList = document.getElementById('membersList');
+        if (!membersList) return;
+
         membersList.innerHTML = '';
 
         if (usersData.length === 0) {
@@ -2236,7 +2215,6 @@
             userItem.className = 'user-item';
             userItem.setAttribute('data-user-id', user.Id);
 
-            // Check if user is already assigned to current task
             const isSelected = currentTask && currentTask.taskUsers &&
                 currentTask.taskUsers.some(taskUser => taskUser.Id === user.Id);
 
@@ -2254,26 +2232,6 @@
             userItem.onclick = () => toggleUserAssignment(userItem, user.Id, user.UserName);
             membersList.appendChild(userItem);
         });
-    }
-
-    async function removeUserFromProject(projectId, userId) {
-        const formData = new FormData();
-        formData.append('projectId', projectId);
-        formData.append('userId', userId);
-
-        const response = await fetch('/Project/RemoveProjectMember', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-        console.log('Remove Project Member Response:', data);
-
-        if (!data.success) {
-            throw new Error(data.message || 'Failed to remove user from project');
-        }
-
-        return data;
     }
 
     function toggleUserAssignment(userItem, userId, userName) {
@@ -2326,11 +2284,17 @@
 
         const taskUsers = currentTask.taskUsers || [];
 
-        if (taskUsers.length > 0) {
+        const validTaskUsers = taskUsers.filter(taskUser =>
+            usersData.some(projectUser => projectUser.Id === taskUser.Id)
+        );
+
+        currentTask.taskUsers = validTaskUsers;
+
+        if (validTaskUsers.length > 0) {
             taskUsersSection.style.display = 'block';
             noUsersMessage.style.display = 'none';
 
-            taskUsers.forEach((user, index) => {
+            validTaskUsers.forEach((user, index) => {
                 const colorIndex = (index % 6) + 1;
                 const avatar = document.createElement('div');
                 avatar.className = `task-user-avatar avatar-color-${colorIndex}`;
@@ -2344,6 +2308,7 @@
             });
         } else {
             taskUsersSection.style.display = 'none';
+            noUsersMessage.style.display = 'block';
         }
     }
 
@@ -2640,6 +2605,12 @@
             modalDescription.classList.add('empty');
         }
         originalDescription = modalDescription.value;
+
+        if (currentTask.taskUsers) {
+            currentTask.taskUsers = currentTask.taskUsers.filter(taskUser =>
+                usersData.some(projectUser => projectUser.Id === taskUser.Id)
+            );
+        }
 
         updateTaskUsersDisplay();
 
@@ -3440,9 +3411,13 @@
             if (isCurrentlyMember) {
                 await removeUserFromProject(projectId, userId);
                 membershipChanges.set(userId, false);
+
+                removeUserFromModalMemberList(userId);
             } else {
                 await addUserToProject(projectId, userId);
                 membershipChanges.set(userId, true);
+
+                addUserToModalMemberList(userId, userName);
             }
 
             userItem.classList.toggle('selected');
@@ -3561,6 +3536,54 @@
         }
     });
 
+    function addUserToModalMemberList(userId, userName) {
+        const userExists = usersData.some(user => user.Id === userId);
+        if (!userExists) {
+            usersData.push({
+                Id: userId,
+                UserName: userName
+            });
+        }
+
+        // Refresh the members list in the modal
+        if (currentTask) {
+            populateMembersList();
+        }
+    }
+
+    function removeUserFromModalMemberList(userId) {
+        const userIndex = usersData.findIndex(user => user.Id === userId);
+        if (userIndex !== -1) {
+            usersData.splice(userIndex, 1);
+        }
+
+        if (currentTask) {
+            populateMembersList();
+        }
+
+        if (currentTask && currentTask.taskUsers) {
+            const taskUserIndex = currentTask.taskUsers.findIndex(user => user.Id === userId);
+            if (taskUserIndex !== -1) {
+                currentTask.taskUsers.splice(taskUserIndex, 1);
+                updateTaskUsersDisplay();
+            }
+        }
+
+        removeUserFromAllTasks(userId);
+    }
+
+    function removeUserFromAllTasks(userId) {
+        tasksData.forEach(task => {
+            if (task.taskUsers) {
+                const userIndex = task.taskUsers.findIndex(user => user.Id === userId);
+                if (userIndex !== -1) {
+                    task.taskUsers.splice(userIndex, 1);
+                    console.log(`Removed user ${userId} from task ${task.Id}`);
+                }
+            }
+        });
+    }
+
     function addUserToNavbar(userId, userName) {
         const navbarRight = document.querySelector('.navbar-right');
 
@@ -3577,6 +3600,8 @@
 
         const dropdown = navbarRight.querySelector('.dropdown');
         navbarRight.insertBefore(newAvatar, dropdown);
+
+        addUserToModalMemberList(userId, userName);
     }
 
     function removeUserFromNavbar(userId) {
@@ -3587,6 +3612,9 @@
         if (avatarToRemove) {
             avatarToRemove.remove();
         }
+
+        // Also remove from modal member list
+        removeUserFromModalMemberList(userId);
     }
 
     function getUserInitials(userName) {
@@ -3635,6 +3663,32 @@
 
             colorIndex = colorIndex >= 6 ? 1 : colorIndex + 1;
         });
+    }
+
+    async function refreshProjectUsersData() {
+        const projectId = "@Model?.project?.Id";
+
+        try {
+            const response = await fetch(`/Project/GetProjectUsers?projectId=${projectId}`);
+            if (response.ok) {
+                const data = await response.json();
+
+                // Update the global usersData array
+                if (data && data.projectUsers) {
+                    usersData.length = 0;
+                    data.projectUsers.forEach(user => {
+                        usersData.push(user);
+                    });
+
+                    if (currentTask) {
+                        populateMembersList();
+                        updateMembersDropdownSelection();
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error refreshing project users data:', error);
+        }
     }
 
     // ========== Delete Project ==========
