@@ -1,0 +1,456 @@
+﻿@using TaskManagementAPI.Models.Project
+@model TaskManagementSystem.Models.ViewModels.PaginatedProjectsViewModel
+
+<style>
+    body {
+        background-color: #1a1d23;
+        color: #e9ecef;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+        scroll-behavior: smooth;
+    }
+
+    .projects-container {
+        padding: 16px;
+        max-width: 1200px;
+        margin: 0 auto 60px auto;
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .projects-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #4a5568;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .projects-title {
+        color: #e2e8f0;
+        font-weight: 600;
+        margin: 0;
+        font-size: clamp(1.4rem, 3.5vw, 1.9rem);
+        flex: 1 1 auto;
+    }
+
+    .boards-container-wrapper {
+        position: relative;
+        width: 100%;
+        flex: 1 1 auto;
+        max-height: calc(100vh - 180px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 6px;
+        scrollbar-width: thin;
+    }
+
+        .boards-container-wrapper::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .boards-container-wrapper::-webkit-scrollbar-thumb {
+            background-color: #4a5568;
+            border-radius: 4px;
+        }
+
+    .boards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 12px;
+        width: 100%;
+        box-sizing: border-box;
+        align-content: start;
+    }
+
+    .board-card, .create-board-card {
+        border-radius: 8px;
+        padding: 12px;
+        cursor: pointer;
+        min-height: 110px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        word-wrap: break-word;
+        box-sizing: border-box;
+    }
+
+    .board-card {
+        background-color: #2d3748;
+        border-left: 4px solid #0079bf;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+        .board-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+            background-color: #374151;
+        }
+
+        .board-card h3 {
+            margin-bottom: 6px;
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+
+        .board-card p {
+            color: #a0aec0;
+            font-size: 13px;
+            margin: 0;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+    .create-board-card {
+        background-color: #4a5568;
+        border: 2px dashed #718096;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s;
+        min-height: 110px;
+    }
+
+        .create-board-card:hover {
+            background-color: #5a6578;
+        }
+
+        .create-board-card i {
+            font-size: 22px;
+            color: #a0aec0;
+            margin-bottom: 8px;
+        }
+
+        .create-board-card span {
+            color: #a0aec0;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+    /* Pagination */
+    .pagination-container {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        background-color: #1a1d23;
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 10px 0;
+        border-top: 1px solid #333;
+        z-index: 10;
+    }
+
+        .pagination-container a {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 6px 10px;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: background-color 0.2s, transform 0.1s;
+            font-size: 13px;
+            min-width: 36px;
+            text-align: center;
+        }
+
+            .pagination-container a:hover {
+                background-color: #4a5568;
+            }
+
+            .pagination-container a.active {
+                background-color: #0079bf;
+                color: #fff;
+                transform: scale(1.05);
+            }
+
+    /* Dropdown */
+    .create-project-dropdown {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 360px;
+        background-color: #2d3748;
+        border-radius: 8px;
+        padding: 16px;
+        display: none;
+        flex-direction: column;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        z-index: 999;
+        gap: 12px;
+    }
+
+        .create-project-dropdown h4 {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            text-align: center;
+        }
+
+        .create-project-dropdown label {
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+
+        .create-project-dropdown input,
+        .create-project-dropdown textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 4px;
+            border: 1px solid #718096;
+            background-color: #1a1d23;
+            color: #e9ecef;
+            resize: none;
+        }
+
+        .create-project-dropdown textarea {
+            min-height: 80px;
+        }
+
+        .create-project-dropdown .close-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .create-project-dropdown button.submit-btn {
+            background-color: #0079bf;
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+            .create-project-dropdown button.submit-btn:hover {
+                background-color: #669DF1;
+            }
+
+    /* Responsive */
+    @@media (max-width: 1024px) {
+        .boards-container {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .projects-container {
+            padding: 10px;
+        }
+
+        .boards-container {
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+        }
+
+        .board-card, .create-board-card {
+            min-height: 95px;
+            padding: 10px;
+        }
+
+        .projects-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .boards-container {
+            grid-template-columns: 1fr;
+        }
+
+        .pagination-container {
+            gap: 4px;
+        }
+
+            .pagination-container a {
+                padding: 5px 8px;
+                font-size: 12px;
+            }
+    }
+</style>
+
+
+
+
+<div class="projects-container">
+    <div class="projects-header">
+        <h1 class="projects-title">Your Projects</h1>
+    </div>
+
+    <div class="boards-container-wrapper">
+        <div class="boards-container" id="boardsContainer">
+            <div class="create-board-card" id="createBoardCard">
+                <i class="bi bi-plus-lg"></i>
+                <span>Create new task</span>
+            </div>
+
+            @if (Model.Projects.Any())
+            {
+                foreach (var project in Model.Projects)
+                {
+                    <div class="board-card" data-project-id="@project.Id">
+                        <div>
+                            <h3>@project.Name</h3>
+                            <p>@(string.IsNullOrEmpty(project.Description) ? "The guy is so lazy, nothing is left..." : project.Description)</p>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p>No projects found.</p>
+            }
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-container">
+            @if (Model.TotalPages > 1)
+            {
+                @if (Model.Page > 1)
+                {
+                    <a href="@Url.Action("Index", new { page = Model.Page - 1 })">&laquo; Prev</a>
+                }
+
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <a href="@Url.Action("Index", new { page = i })"
+                       class="@(i == Model.Page ? "active" : "")">@i</a>
+                }
+
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a href="@Url.Action("Index", new { page = Model.Page + 1 })">Next &raquo;</a>
+                }
+            }
+        </div>
+
+        <!-- Create task dropdown -->
+        <div class="create-project-dropdown" id="projectDropdown">
+            <h4 class="text-center">Create Project</h4>
+            <button class="close-btn" id="closeDropdown">&times;</button>
+            <label for="projectName">Project Name</label>
+            <input type="text" id="projectName" placeholder="Project name" />
+            <label for="projectDescription">Description</label>
+            <textarea id="projectDescription" placeholder="Project description"></textarea>
+            <button class="submit-btn" id="submitProject">Create</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const createBoardCard = document.getElementById('createBoardCard');
+        const projectDropdown = document.getElementById('projectDropdown');
+        const closeDropdown = document.getElementById('closeDropdown');
+        const projectNameInput = document.getElementById('projectName');
+
+        function showDropdown() {
+            const rect = createBoardCard.getBoundingClientRect();
+            const wrapperRect = document.querySelector('.boards-container-wrapper').getBoundingClientRect();
+            const dropdownWidth = projectDropdown.offsetWidth;
+
+            if (window.innerWidth <= 768) {
+                projectDropdown.style.left = '50%';
+                projectDropdown.style.top = '60px';
+                projectDropdown.style.transform = 'translateX(-50%)';
+            } else {
+                let leftPos = rect.left - wrapperRect.left - dropdownWidth - 8;
+                if (leftPos < 0) leftPos = rect.right - wrapperRect.left + 8;
+                let topPos = rect.top - wrapperRect.top;
+
+                projectDropdown.style.left = leftPos + 'px';
+                projectDropdown.style.top = topPos + 'px';
+                projectDropdown.style.transform = 'none';
+            }
+
+            projectDropdown.style.display = 'flex';
+            projectNameInput.focus();
+        }
+
+        createBoardCard.addEventListener('click', function (e) {
+            e.stopPropagation();
+            projectDropdown.style.display === 'flex' ? projectDropdown.style.display = 'none' : showDropdown();
+        });
+
+        closeDropdown.addEventListener('click', function (e) {
+            e.stopPropagation();
+            projectDropdown.style.display = 'none';
+        });
+
+        document.addEventListener('click', function () {
+            projectDropdown.style.display = 'none';
+        });
+
+        projectDropdown.addEventListener('click', function (e) {
+            e.stopPropagation();
+        });
+
+        window.addEventListener('resize', function () {
+            projectDropdown.style.display = 'none';
+        });
+
+        submitProject.addEventListener('click', async function () {
+            const name = document.getElementById('projectName').value.trim();
+            const desc = document.getElementById('projectDescription').value.trim();
+            if (!name) { alert('Project name is required'); return; }
+
+            try {
+                const formData = new FormData();
+                formData.append('projectName', name);
+                formData.append('projectDescription', desc);
+
+                const response = await fetch('@Url.Action("CreateProject", "Project")', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const projectId = result.projectId || result.id;
+                    if (projectId) {
+                        window.location.href = '@Url.Action("ProjectDetails", "Project")' + '?id=' + projectId;
+                    }
+                } else {
+                    alert(result.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error creating project.');
+            }
+        });
+
+        document.querySelectorAll('.board-card').forEach(card => {
+            card.addEventListener('click', function () {
+                const projectId = this.getAttribute('data-project-id');
+                if (!projectId) return;
+
+                window.location.href = '@Url.Action("ProjectDetails", "Project")' + '?id=' + projectId;
+            });
+        });
+    });
+</script>

@@ -1,0 +1,2908 @@
+﻿@using TaskManagement.Data.Migrations.Models
+@model TaskManagementSystem.Models.ViewModels.ProjectDetailsViewModel
+
+<style>
+    body {
+        background-color: #1a1d23;
+        color: #e9ecef;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .navbar {
+        background-color: #1a1d23;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .navbar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .project-name {
+        color: #ffffff;
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+        padding: 6px 12px;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .project-name-input {
+        font-size: 18px;
+        font-weight: 700;
+        color: #ffffff;
+        background-color: transparent;
+        border: 1px solid #666;
+        border-radius: 4px;
+        padding: 6px 10px;
+        outline: none;
+        box-sizing: border-box;
+    }
+
+    .project-name:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .navbar-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .more-btn {
+        background: none;
+        border: none;
+        color: #aaa;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 2px 4px;
+        border-radius: 6px;
+        transition: background-color 0.2s;
+    }
+
+        .more-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #2b2f36;
+        min-width: 160px;
+        border-radius: 6px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        z-index: 9999;
+    }
+
+        .dropdown-content a {
+            color: #ddd;
+            padding: 10px 14px;
+            text-decoration: none;
+            display: block;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+            .dropdown-content a:hover {
+                background-color: rgba(255,255,255,0.1);
+            }
+
+    .board-container {
+        display: flex;
+        gap: 12px;
+        padding: 16px;
+        overflow-x: auto;
+        height: calc(100vh - 65px);
+        align-items: flex-start;
+    }
+
+        .board-container::-webkit-scrollbar {
+            height: 12px;
+        }
+
+        .board-container::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+    .column {
+        background-color: #101204;
+        border-radius: 8px;
+        padding: 8px;
+        min-width: 272px;
+        max-width: 272px;
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 120px);
+        height: auto;
+        overflow: hidden;
+    }
+
+    .column-header {
+        padding: 8px 12px;
+        margin-bottom: 8px;
+        flex-shrink: 0;
+    }
+
+        .column-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+    .column-content {
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0 4px;
+        flex: 1;
+        min-height: 0;
+        /* Custom scrollbar */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
+    }
+
+        .column-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .column-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin: 2px 0;
+        }
+
+        .column-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+            .column-content::-webkit-scrollbar-thumb:hover {
+                background: rgba(255, 255, 255, 0.5);
+            }
+
+    .task-card {
+        background-color: #1a1d23;
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+        .task-card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+    .task-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .task-card-title {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 400;
+        color: #fff;
+        line-height: 20px;
+        word-wrap: break-word;
+    }
+
+    .task-card-description {
+        font-size: 12px;
+        color: #5e6c84;
+        margin: 8px 0;
+        line-height: 16px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .task-card-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+    }
+
+    .date-badge {
+        background-color: #f4f5f7;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        color: #172b4d;
+    }
+
+        .date-badge.overdue {
+            background-color: #ffebe6;
+            color: #bf2600;
+        }
+
+        .date-badge.due-soon {
+            background-color: #fff4e6;
+            color: #ff991f;
+        }
+
+    .add-card-btn {
+        background-color: transparent;
+        border: none;
+        padding: 8px 12px;
+        color: #5e6c84;
+        font-size: 14px;
+        cursor: pointer;
+        border-radius: 8px;
+        text-align: left;
+        transition: background-color 0.2s;
+        margin-top: 4px;
+    }
+
+        .add-card-btn:hover {
+            background-color: #d2d4d9;
+        }
+
+    /* Modal Styles - Dark Theme */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        overflow-y: auto;
+        padding: 48px 8px 80px;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .modal-overlay.active {
+            display: flex !important;
+        }
+
+    .task-modal {
+        background-color: #2b2f36;
+        border-radius: 8px;
+        width: 768px;
+        max-width: 100%;
+        margin: 0 auto;
+        position: relative;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        min-height: 600px;
+        z-index: 10001;
+        overflow: visible;
+    }
+
+    .modal-header {
+        padding: 12px 40px 8px 56px;
+        position: relative;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-header-icon {
+        position: absolute;
+        left: 16px;
+        top: 16px;
+        font-size: 20px;
+        color: #b6c2cf;
+    }
+
+    .modal-title-section {
+        margin-bottom: 4px;
+    }
+
+    .modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #e9ecef;
+        margin: 0;
+        padding: 8px 12px;
+        border: none;
+        background: transparent;
+        width: 100%;
+        line-height: 24px;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .modal-title:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-title:focus {
+            background-color: #1a1d23;
+            outline: 2px solid #0079bf;
+            cursor: text;
+        }
+
+    .modal-subtitle {
+        font-size: 14px;
+        color: #9fadbc;
+        margin: 0;
+        padding: 0 12px 8px;
+    }
+
+    .modal-close-btn {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        background: transparent;
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 3px;
+        cursor: pointer;
+        color: #9fadbc;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s;
+    }
+
+        .modal-close-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #e9ecef;
+        }
+
+    .modal-body {
+        display: flex;
+        padding: 12px 16px 16px 36px;
+        gap: 8px;
+        position: relative;
+    }
+
+    .modal-main {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .modal-sidebar {
+        width: 168px;
+        flex-shrink: 0;
+        padding: 0 8px 8px 24px;
+    }
+
+    .modal-section {
+        margin-top: 24px;
+    }
+
+    .modal-section-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        margin-bottom: 8px;
+    }
+
+    .modal-section-icon {
+        font-size: 16px;
+        color: #b6c2cf;
+    }
+
+    .modal-section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #9fadbc;
+        margin: 0;
+    }
+
+    .description-box {
+        background-color: #1a1d23;
+        border: none;
+        border-radius: 3px;
+        padding: 8px 12px;
+        min-height: 108px;
+        color: #e9ecef;
+        font-size: 14px;
+        line-height: 20px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        width: 100%;
+        font-family: inherit;
+        resize: vertical;
+    }
+
+        .description-box:hover {
+            background-color: #101204;
+        }
+
+        .description-box:focus {
+            outline: 2px solid #0079bf;
+            background-color: #1a1d23;
+            cursor: text;
+        }
+
+        .description-box.empty {
+            color: #718096;
+        }
+
+    .dates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 8px;
+    }
+
+    .date-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .date-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #9fadbc;
+    }
+
+    .date-display {
+        background-color: #1a1d23;
+        border: none;
+        border-radius: 3px;
+        padding: 6px 12px;
+        font-size: 14px;
+        color: #e9ecef;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+        .date-display:hover {
+            background-color: #101204;
+        }
+
+        .date-display.overdue {
+            background-color: #ffebe6;
+            color: #bf2600;
+        }
+
+        .date-display.due-soon {
+            background-color: #fff4e6;
+            color: #ff991f;
+        }
+
+    .date-checkbox {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+
+    .sidebar-section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #9fadbc;
+        margin: 0 0 8px 0;
+    }
+
+    .sidebar-btn {
+        width: 100%;
+        background-color: rgba(255, 255, 255, 0.05);
+        border: none;
+        border-radius: 3px;
+        padding: 6px 12px;
+        margin-bottom: 8px;
+        color: #e9ecef;
+        font-size: 14px;
+        cursor: pointer;
+        text-align: left;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .sidebar-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+    .sidebar-icon {
+        font-size: 16px;
+        width: 16px;
+        text-align: center;
+    }
+
+    .btn-save {
+        background-color: #0079bf;
+        color: #ffffff;
+        border: none;
+        border-radius: 3px;
+        padding: 6px 12px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        margin-right: 4px;
+        transition: background-color 0.2s;
+    }
+
+        .btn-save:hover {
+            background-color: #026aa7;
+        }
+
+    .btn-cancel {
+        background-color: transparent;
+        color: #ffffff;
+        border: none;
+        border-radius: 3px;
+        padding: 6px 12px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        margin-right: 4px;
+        transition: background-color 0.2s;
+    }
+
+        .btn-cancel:hover {
+            background-color: #7b848f;
+        }
+
+    .edit-controls {
+        margin-top: 8px;
+        display: none;
+    }
+
+        .edit-controls.active {
+            display: block;
+        }
+
+    .avatar-color-1 {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .avatar-color-2 {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .avatar-color-3 {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .avatar-color-4 {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+
+    .avatar-color-5 {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+
+    .avatar-color-6 {
+        background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+    }
+
+    .sidebar-dropdown {
+        position: absolute;
+        background-color: #2b2f36;
+        border-radius: 8px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        z-index: 10002;
+        min-width: 240px;
+        padding: 12px;
+        display: none;
+    }
+
+        .sidebar-dropdown.active {
+            display: block;
+        }
+
+    .dropdown-header {
+        font-size: 14px;
+        font-weight: 600;
+        color: #e9ecef;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .dropdown-close-btn {
+        background: none;
+        border: none;
+        color: #9fadbc;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 4px;
+        border-radius: 3px;
+        transition: background-color 0.2s;
+    }
+
+        .dropdown-close-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #e9ecef;
+        }
+
+    .dropdown-content {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .user-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .user-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .user-item.selected {
+            background-color: rgba(0, 121, 191, 0.3);
+        }
+
+    .search-bar {
+        width: 100%;
+        background-color: #1a1d23;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 6px 8px;
+        color: #e9ecef;
+        font-size: 14px;
+        margin-bottom: 8px;
+        box-sizing: border-box;
+    }
+
+        .search-bar:focus {
+            outline: 2px solid #0079bf;
+            border-color: #0079bf;
+        }
+
+    .date-picker-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .date-checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .date-input-group {
+        margin-left: 24px;
+        margin-top: 4px;
+    }
+
+    .date-input {
+        background-color: #1a1d23;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 6px 8px;
+        color: #e9ecef;
+        font-size: 14px;
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+        .date-input:focus {
+            outline: 2px solid #0079bf;
+            border-color: #0079bf;
+        }
+
+    .file-upload-area {
+        border: 2px dashed #666;
+        border-radius: 6px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+
+        .file-upload-area:hover {
+            border-color: #0079bf;
+        }
+
+        .file-upload-area.dragover {
+            border-color: #0079bf;
+            background-color: rgba(0, 121, 191, 0.1);
+        }
+
+    .upload-icon {
+        font-size: 24px;
+        color: #666;
+        margin-bottom: 8px;
+    }
+
+    .status-option {
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        margin-bottom: 4px;
+    }
+
+        .status-option:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .status-option.selected {
+            background-color: rgba(0, 121, 191, 0.3);
+        }
+
+    .confirmation-dialog {
+        text-align: center;
+    }
+
+    .confirmation-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        cursor: pointer;
+        flex: 1;
+    }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        cursor: pointer;
+        flex: 1;
+    }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+    .attachment-preview {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        background-color: #1a1d23;
+        border-radius: 4px;
+        margin-bottom: 8px;
+    }
+
+    .attachment-icon {
+        font-size: 16px;
+        color: #666;
+    }
+
+    .attachment-name {
+        flex: 1;
+        font-size: 14px;
+        color: #e9ecef;
+    }
+
+    .attachment-actions {
+        display: flex;
+        gap: 4px;
+    }
+
+    .action-btn {
+        background: none;
+        border: none;
+        color: #666;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 3px;
+    }
+
+        .action-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #e9ecef;
+        }
+
+    .no-results {
+        text-align: center;
+        color: #9fadbc;
+        font-size: 14px;
+        padding: 12px;
+    }
+
+    .add-task-form {
+        background-color: #1a1d23;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+
+    .task-title-input {
+        width: 100%;
+        background-color: #2b2f36;
+        border: 2px solid #0079bf;
+        border-radius: 4px;
+        padding: 8px 12px;
+        color: #e9ecef;
+        font-size: 14px;
+        font-family: inherit;
+        margin-bottom: 12px;
+        box-sizing: border-box;
+        resize: none;
+        min-height: 60px;
+    }
+
+        .task-title-input:focus {
+            outline: none;
+            border-color: #0079bf;
+            box-shadow: 0 0 0 2px rgba(0, 121, 191, 0.3);
+        }
+
+        .task-title-input::placeholder {
+            color: #9fadbc;
+        }
+
+    .task-form-buttons {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .btn-create {
+        background-color: #0079bf;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .btn-create:hover {
+            background-color: #026aa7;
+        }
+
+        .btn-create:disabled {
+            background-color: #5e6c84;
+            cursor: not-allowed;
+        }
+
+    .btn-cancel-form {
+        background: none;
+        border: none;
+        color: #9fadbc;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 3px;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+    }
+
+        .btn-cancel-form:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #e9ecef;
+        }
+
+    .add-card-btn {
+        background-color: transparent;
+        border: none;
+        padding: 8px 12px;
+        color: #5e6c84;
+        font-size: 14px;
+        cursor: pointer;
+        border-radius: 8px;
+        text-align: left;
+        transition: background-color 0.2s;
+        margin-top: 4px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .add-card-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #e9ecef;
+        }
+
+    .add-card-btn-icon {
+        font-size: 16px;
+    }
+
+    .members-section {
+        margin-bottom: 16px;
+    }
+
+    .members-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #9fadbc;
+        margin-bottom: 8px;
+    }
+
+    .members-avatars {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .member-avatar-small {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 11px;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .member-avatar-small:hover::after {
+        content: '×';
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        background: #dc3545;
+        color: white;
+        border-radius: 50%;
+        width: 14px;
+        height: 14px;
+        font-size: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+    .task-users-section {
+        margin-bottom: 12px;
+    }
+
+    .task-users-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #9fadbc;
+        margin-bottom: 8px;
+    }
+
+    .task-users-avatars {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+    }
+
+    .task-user-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 11px;
+        cursor: pointer;
+        position: relative;
+        transition: transform 0.2s;
+    }
+
+    .task-user-avatar:hover {
+        transform: scale(1.1);
+    }
+
+    .task-user-avatar:hover::after {
+        content: '×';
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        background: #dc3545;
+        color: white;
+        border-radius: 50%;
+        width: 14px;
+        height: 14px;
+        font-size: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+
+    .no-users-message {
+        font-size: 12px;
+        color: #9fadbc;
+        font-style: italic;
+        margin-bottom: 8px;
+    }
+
+    .attachment-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .file-size {
+        font-size: 11px;
+        color: #9fadbc;
+    }
+
+    .bi-file-image { color: #28a745; }
+    .bi-file-pdf { color: #dc3545; }
+    .bi-file-word { color: #007bff; }
+    .bi-file-excel { color: #28a745; }
+    .bi-file-text { color: #6c757d; }
+    .bi-file-earmark { color: #6c757d; }
+
+    .upload-progress {
+        margin-top: 8px;
+        background: #1a1d23;
+        border-radius: 4px;
+        padding: 8px;
+    }
+
+    .progress-bar {
+        height: 4px;
+        background: #0079bf;
+        border-radius: 2px;
+        transition: width 0.3s ease;
+    }
+
+    .attachments-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .attachment-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px;
+        background-color: #1a1d23;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: background-color 0.2s;
+        flex-wrap: wrap;
+        min-height: 60px;
+    }
+
+    .attachment-item:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .attachment-icon-large {
+        font-size: 20px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        background-color: rgba(255, 255, 255, 0.1);
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .attachment-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .attachment-name {
+        font-size: 14px;
+        color: #e9ecef;
+        font-weight: 500;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.4;
+    }
+
+    .attachment-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 12px;
+        color: #9fadbc;
+        flex-wrap: wrap;
+    }
+
+    .attachment-actions-modal {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+        margin-top: 4px;
+    }
+
+    .action-btn-modal {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: #9fadbc;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .action-btn-modal:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #e9ecef;
+    }
+
+    @@media (max-width: 768px) {
+        .attachment-item {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+    
+        .attachment-icon-large {
+            align-self: flex-start;
+        }
+    
+        .attachment-actions-modal {
+            justify-content: flex-end;
+            margin-top: 8px;
+        }
+    }
+
+    .attachment-item:has(.attachment-name:only-child) {
+        align-items: center;
+    }
+
+    .attachment-item:has(.attachment-name:only-child) .attachment-details {
+        min-width: 200px;
+    }
+
+    .no-attachments-message {
+        text-align: center;
+        color: #9fadbc;
+        font-size: 14px;
+        padding: 20px;
+        font-style: italic;
+    }
+
+</style>
+
+<!-- Navbar -->
+<div class="navbar">
+    <div class="navbar-left">
+        <h1 class="project-name" id="projectNameDisplay" onclick="enableProjectNameEdit()">
+            @(Model?.project.Name ?? "Project Board")
+        </h1>
+        <input type="text" id="projectNameInput"
+               class="project-name-input"
+               value="@(Model?.project.Name ?? "Project Board")"
+               onblur="saveProjectName()"
+               onkeydown="handleEnter(event)"
+               style="display:none;" />
+    </div>
+
+    <div class="navbar-right">
+        @if (Model?.project.projectUsers != null)
+        {
+            int colorIndex = 1;
+            foreach (var user in Model.project.projectUsers)
+            {
+                var initials = string.IsNullOrEmpty(user.UserName) ? "?" :
+                (user.UserName.Length >= 2 ? user.UserName.Substring(0, 2).ToUpper() : user.UserName.ToUpper());
+                var colorClass = $"avatar-color-{colorIndex}";
+                colorIndex = colorIndex >= 6 ? 1 : colorIndex + 1;
+
+                <div class="user-avatar @colorClass" title="@user.UserName">@initials</div>
+            }
+        }
+
+        <div class="dropdown">
+            <button class="more-btn" onclick="toggleDropdown('projectActionsDropdown')">
+                <i class="bi bi-three-dots"></i>
+            </button>
+            <div id="projectActionsDropdown" class="dropdown-content">
+                <a href="#">Add Member</a>
+                <a href="#">Delete Project</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Board -->
+<div class="board-container">
+    @foreach (TaskManagement.Data.Migrations.Models.TaskStatus status in Enum.GetValues(typeof(TaskManagement.Data.Migrations.Models.TaskStatus)))
+    {
+        var tasksInColumn = Model?.project.projectTasks?
+        .Where(t => t.ProgressStatus == status)
+        .ToList() ?? new List<ProjectTaskReturnModel>();
+
+        var member = typeof(TaskManagement.Data.Migrations.Models.TaskStatus)
+        .GetMember(status.ToString())
+        .FirstOrDefault();
+        var displayName = member?
+        .GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.DisplayAttribute), false)
+        .Cast<System.ComponentModel.DataAnnotations.DisplayAttribute>()
+        .FirstOrDefault()?.Name ?? status.ToString();
+
+        <div class="column">
+            <div class="column-header">
+                <h3>@displayName</h3>
+            </div>
+            <div class="column-content">
+                @foreach (var task in tasksInColumn)
+                {
+                    var isOverdue = task.DueDate.HasValue && task.DueDate.Value < DateTime.Now;
+                    var isDueSoon = task.DueDate.HasValue && task.DueDate.Value <= DateTime.Now.AddDays(3);
+
+                    <div class="task-card" onclick="openTaskModal('@task.Id')">
+                        <div class="task-card-header">
+                            <h4 class="task-card-title">@task.Title</h4>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(task.Description))
+                        {
+                            <p class="task-card-description">@task.Description</p>
+                        }
+
+                        @if (task.DueDate.HasValue)
+                        {
+                            <div class="task-card-meta">
+                                <div class="date-badge @(isOverdue ? "overdue" : isDueSoon ? "due-soon" : "")">
+                                    <i class="bi bi-calendar-event"></i> @task.DueDate.Value.ToString("MMM dd")
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="add-task-form" id="addTaskForm_@((int)status)" style="display: none;">
+                    <textarea class="task-title-input"
+                              id="taskTitleInput_@((int)status)"
+                              placeholder="Enter a title for this task..."
+                              rows="3"></textarea>
+                    <div class="task-form-buttons">
+                        <button class="btn-create" onclick="createTask(@((int)status))">Create</button>
+                        <button class="btn-cancel-form" onclick="cancelTaskCreation(@((int)status))">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="add-card-btn" onclick="showAddTaskForm(@((int)status))">
+                    <i class="bi bi-plus add-card-btn-icon"></i>
+                    Add a task
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="taskModal" onclick="handleModalOverlayClick(event)">
+    <div class="task-modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <div class="modal-header-icon">
+                <i class="bi bi-card-text"></i>
+            </div>
+            <div class="modal-title-section">
+                <input type="text" class="modal-title" id="modalTitle" placeholder="Task title" readonly onclick="enableTitleEdit()">
+                <p class="modal-subtitle" id="modalSubtitle">in list <strong>To Do</strong></p>
+            </div>
+            <button class="modal-close-btn" onclick="closeModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div class="modal-main">
+                <!-- User Section -->
+                <div class="task-users-section" id="taskUsersSection" style="display: none;">
+                    <div class="task-users-label">Member</div>
+                    <div class="task-users-avatars" id="taskUsersAvatars">
+                    </div>
+                    <div class="no-users-message" id="noUsersMessage" style="display: none;">
+                        No users assigned to this task
+                    </div>
+                </div>
+                <!-- Description Section -->
+                <div class="modal-section">
+                    <div class="modal-section-header">
+                        <h3 class="modal-section-title">Description</h3>
+                    </div>
+                    <textarea class="description-box empty" id="modalDescription"
+                              placeholder="Add a more detailed description..."
+                              readonly
+                              onclick="enableDescriptionEdit()"></textarea>
+                    <div class="edit-controls" id="descriptionControls">
+                        <button class="btn-save" onclick="saveDescription()">Save</button>
+                        <button class="btn-cancel" onclick="cancelDescriptionEdit()">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-section" id="attachmentsSection" style="display: none;">
+                    <div class="modal-section-header">
+                        <h3 class="modal-section-title">Attachments</h3>
+                    </div>
+                    <div id="modalAttachmentsList" class="attachments-container">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="modal-sidebar">
+                <p class="sidebar-section-title">Add to card</p>
+                <button class="sidebar-btn" onclick="toggleSidebarDropdown('membersDropdown', this)">
+                    <i class="bi bi-people sidebar-icon"></i>
+                    <span>Members</span>
+                </button>
+                <button class="sidebar-btn" onclick="toggleSidebarDropdown('attachmentsDropdown', this)">
+                    <i class="bi bi-paperclip sidebar-icon"></i>
+                    <span>Attachment</span>
+                </button>
+
+                <p class="sidebar-section-title" style="margin-top: 16px;">Actions</p>
+                <button class="sidebar-btn" onclick="toggleSidebarDropdown('moveDropdown', this)">
+                    <i class="bi bi-arrow-right sidebar-icon"></i>
+                    <span>Move</span>
+                </button>
+                <button class="sidebar-btn" onclick="toggleSidebarDropdown('removeDropdown', this)">
+                    <i class="bi bi-trash-fill sidebar-icon"></i>
+                    <span>Remove</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sidebar Dropdowns -->
+<div id="membersDropdown" class="sidebar-dropdown">
+    <div class="dropdown-header">
+        <span>Members</span>
+        <button class="dropdown-close-btn" onclick="closeAllDropdowns()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <input type="text" class="search-bar" id="membersSearch" placeholder="Search members..." onkeyup="filterMembers()">
+    <div id="membersList">
+    </div>
+</div>
+
+<div id="attachmentsDropdown" class="sidebar-dropdown">
+    <div class="dropdown-header">
+        <span>Attachments</span>
+        <button class="dropdown-close-btn" onclick="closeAllDropdowns()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <div class="file-upload-area" id="fileUploadArea" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">
+            <i class="bi bi-cloud-upload"></i>
+        </div>
+        <div>Click to upload or drag and drop multiple files</div>
+        <input type="file" id="fileInput" style="display: none;" multiple onchange="handleFileInputChange(this.files)">
+    </div>
+    <div id="attachmentsList" class="dropdown-content" style="margin-top: 12px;">
+    </div>
+</div>
+
+<div id="moveDropdown" class="sidebar-dropdown">
+    <div class="dropdown-header">
+        <span>Move Task</span>
+        <button class="dropdown-close-btn" onclick="closeAllDropdowns()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <div id="statusList">
+        @foreach (TaskManagement.Data.Migrations.Models.TaskStatus status in Enum.GetValues(typeof(TaskManagement.Data.Migrations.Models.TaskStatus)))
+        {
+            var member = typeof(TaskManagement.Data.Migrations.Models.TaskStatus).GetMember(status.ToString()).FirstOrDefault();
+            var displayName = member?.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.DisplayAttribute), false)
+            .Cast<System.ComponentModel.DataAnnotations.DisplayAttribute>()
+            .FirstOrDefault()?.Name ?? status.ToString();
+
+            <div class="status-option" data-status="@((int)status)" onclick="selectStatus(@((int)status), this)">
+                @displayName
+            </div>
+        }
+    </div>
+</div>
+
+<div id="removeDropdown" class="sidebar-dropdown">
+    <div class="dropdown-header">
+        <span>Remove Task</span>
+        <button class="dropdown-close-btn" onclick="closeAllDropdowns()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <div class="confirmation-dialog">
+        <p>Are you sure you want to remove this task?</p>
+        <div class="confirmation-buttons">
+            <button class="btn-danger" onclick="removeTask()">Remove</button>
+            <button class="btn-secondary" onclick="closeAllDropdowns()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    let currentTask = null;
+    let originalDescription = "";
+    let originalTitle = "";
+    let isAnyDropdownActive = false;
+    let selectedUsers = new Set();
+    let selectedStatus = null;
+
+    const tasksData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model?.project.projectTasks ?? new List<ProjectTaskReturnModel>()));
+    const usersData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model?.project.projectUsers ?? new List<ProjectUserReturnModel>()));
+    let currentAttachments = [];
+
+    const statusNames = {};
+    @foreach (TaskManagement.Data.Migrations.Models.TaskStatus status in Enum.GetValues(typeof(TaskManagement.Data.Migrations.Models.TaskStatus)))
+    {
+        var member = typeof(TaskManagement.Data.Migrations.Models.TaskStatus).GetMember(status.ToString()).FirstOrDefault();
+        var displayName = member?.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.DisplayAttribute), false)
+        .Cast<System.ComponentModel.DataAnnotations.DisplayAttribute>()
+        .FirstOrDefault()?.Name ?? status.ToString();
+        <text>statusNames[@((int)status)] = "@displayName";</text>
+    }
+
+    // ========== Project Name Editing ==========
+    function enableProjectNameEdit() {
+        const projectNameDisplay = document.getElementById("projectNameDisplay");
+        const projectNameInput = document.getElementById("projectNameInput");
+        const currentWidth = projectNameDisplay.offsetWidth + 20;
+        projectNameInput.style.width = `${currentWidth}px`;
+        projectNameInput.value = projectNameDisplay.textContent.trim();
+
+        projectNameDisplay.style.display = "none";
+        projectNameInput.style.display = "inline-block";
+        projectNameInput.focus();
+        projectNameInput.select();
+    }
+
+    function saveProjectName() {
+        const projectNameDisplay = document.getElementById("projectNameDisplay");
+        const projectNameInput = document.getElementById("projectNameInput");
+        const projectId = "@Model.project.Id";
+
+        const newName = projectNameInput.value.trim();
+        if (newName.length === 0) {
+            alert("Project name cannot be empty.");
+            projectNameInput.focus();
+            return;
+        }
+
+        projectNameDisplay.textContent = newName;
+        projectNameDisplay.style.display = "inline-block";
+        projectNameInput.style.display = "none";
+
+        fetch(`/Project/UpdateProjectName?id=${projectId}&projectName=${encodeURIComponent(newName)}`, {
+            method: "PATCH"
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert("Failed to update project name: " + data.message);
+                }
+            })
+            .catch(err => console.error("Error updating project name:", err));
+    }
+
+    function handleEnter(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            saveProjectName();
+        } else if (event.key === "Escape") {
+            const projectNameInput = document.getElementById("projectNameInput");
+            const projectNameDisplay = document.getElementById("projectNameDisplay");
+            projectNameInput.style.display = "none";
+            projectNameDisplay.style.display = "inline-block";
+        }
+    }
+
+    // ========== Title Editing ==========
+    function enableTitleEdit() {
+        const modalTitle = document.getElementById('modalTitle');
+        modalTitle.removeAttribute('readonly');
+        modalTitle.focus();
+        modalTitle.select();
+    }
+
+    document.getElementById('modalTitle').addEventListener('blur', function() {
+        saveTitle();
+    });
+
+    document.getElementById('modalTitle').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            this.blur();
+        }
+    });
+
+    async function saveTitle() {
+        const modalTitle = document.getElementById('modalTitle');
+        const newTitle = modalTitle.value.trim();
+    
+        if (!newTitle) {
+            alert('Title cannot be empty');
+            modalTitle.value = originalTitle;
+            modalTitle.setAttribute('readonly', 'readonly');
+            return;
+        }
+
+        if (newTitle === originalTitle) {
+            modalTitle.setAttribute('readonly', 'readonly');
+            return;
+        }
+
+        if (!currentTask) {
+            console.error('No current task selected');
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('taskId', currentTask.Id);
+            formData.append('title', newTitle);
+
+            const response = await fetch('/Project/UpdateTaskTitle', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+        
+            if (data.success) {
+                modalTitle.setAttribute('readonly', 'readonly');
+                originalTitle = newTitle;
+            
+                const taskIndex = tasksData.findIndex(t => t.Id === currentTask.Id);
+                if (taskIndex !== -1) {
+                    tasksData[taskIndex].Title = newTitle;
+                }
+            
+                updateTaskCardInUI(currentTask.Id, 'title', newTitle);
+            
+                console.log('Title updated successfully');
+            } else {
+                alert('Failed to update title: ' + (data.message || 'Unknown error'));
+                modalTitle.value = originalTitle;
+                modalTitle.setAttribute('readonly', 'readonly');
+            }
+        } catch (error) {
+            console.error('Error updating title:', error);
+            alert('Error updating title. Please try again.');
+            modalTitle.value = originalTitle;
+            modalTitle.setAttribute('readonly', 'readonly');
+        }
+    }
+
+    // ========== Description Editing ==========
+    function enableDescriptionEdit() {
+        const modalDescription = document.getElementById('modalDescription');
+        const descriptionControls = document.getElementById('descriptionControls');
+
+        modalDescription.removeAttribute('readonly');
+        modalDescription.focus();
+        modalDescription.classList.remove('empty');
+        descriptionControls.classList.add('active');
+    }
+
+    async function saveDescription() {
+        const modalDescription = document.getElementById('modalDescription');
+        const descriptionControls = document.getElementById('descriptionControls');
+        const newDescription = modalDescription.value.trim();
+
+        if (!currentTask) {
+            console.error('No current task selected');
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('taskId', currentTask.Id);
+            formData.append('description', newDescription);
+
+            const response = await fetch('/Project/UpdateTaskDescription', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+        
+            if (data.success) {
+                modalDescription.setAttribute('readonly', 'readonly');
+                descriptionControls.classList.remove('active');
+                originalDescription = newDescription;
+
+                if (!modalDescription.value.trim()) {
+                    modalDescription.classList.add('empty');
+                }
+
+                const taskIndex = tasksData.findIndex(t => t.Id === currentTask.Id);
+                if (taskIndex !== -1) {
+                    tasksData[taskIndex].Description = newDescription;
+                }
+            
+                updateTaskCardInUI(currentTask.Id, 'description', newDescription);
+            
+                console.log('Description updated successfully');
+            } else {
+                alert('Failed to update description: ' + (data.message || 'Unknown error'));
+                cancelDescriptionEdit();
+            }
+        } catch (error) {
+            console.error('Error updating description:', error);
+            alert('Error updating description. Please try again.');
+            cancelDescriptionEdit();
+        }
+    }
+
+    function cancelDescriptionEdit() {
+        const modalDescription = document.getElementById('modalDescription');
+        const descriptionControls = document.getElementById('descriptionControls');
+
+        modalDescription.value = originalDescription;
+        modalDescription.setAttribute('readonly', 'readonly');
+        descriptionControls.classList.remove('active');
+
+        if (!modalDescription.value.trim()) {
+            modalDescription.classList.add('empty');
+        }
+    }
+
+    // ========== Member Management ==========
+    async function addUserToTask(userId, userName) {
+        try {
+            const formData = new FormData();
+            formData.append('taskId', currentTask.Id);
+            formData.append('userId', userId);
+
+            const response = await fetch('/Project/AddTaskMember', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                console.log('Member added to task successfully');
+
+                // Update current task data
+                if (!currentTask.taskUsers) {
+                    currentTask.taskUsers = [];
+                }
+
+                // Add user to task users array
+                currentTask.taskUsers.push({
+                    Id: userId,
+                    UserName: userName,
+                    Email: usersData.find(u => u.Id === userId)?.Email || ''
+                });
+
+                // Update UI
+                updateTaskUsersDisplay();
+
+            } else {
+                alert('Failed to add member: ' + (data.message || 'Unknown error'));
+                // Revert UI selection
+                const userItem = document.querySelector(`[data-user-id="${userId}"]`);
+                if (userItem) {
+                    userItem.classList.remove('selected');
+                }
+            }
+        } catch (error) {
+            console.error('Error adding member:', error);
+            alert('Error adding member. Please try again.');
+            // Revert UI selection
+            const userItem = document.querySelector(`[data-user-id="${userId}"]`);
+            if (userItem) {
+                userItem.classList.remove('selected');
+            }
+        }
+    }
+
+    function populateMembersList() {
+        const membersList = document.getElementById('membersList');
+        membersList.innerHTML = '';
+
+        if (usersData.length === 0) {
+            membersList.innerHTML = '<div class="no-results">No members found</div>';
+            return;
+        }
+
+        usersData.forEach((user, index) => {
+            const colorIndex = (index % 6) + 1;
+            const userItem = document.createElement('div');
+            userItem.className = 'user-item';
+            userItem.setAttribute('data-user-id', user.Id);
+
+            // Check if user is already assigned to current task
+            const isSelected = currentTask && currentTask.taskUsers &&
+                currentTask.taskUsers.some(taskUser => taskUser.Id === user.Id);
+
+            if (isSelected) {
+                userItem.classList.add('selected');
+            }
+
+            userItem.innerHTML = `
+                    <div class="user-avatar avatar-color-${colorIndex}">
+                        ${user.UserName ? user.UserName.substring(0, 2).toUpperCase() : '?'}
+                    </div>
+                    <span>${user.UserName || 'Unknown User'}</span>
+                `;
+
+            userItem.onclick = () => toggleUserAssignment(userItem, user.Id, user.UserName);
+            membersList.appendChild(userItem);
+        });
+    }
+
+    async function removeUserFromTask(userId, userName) {
+        try {
+            const formData = new FormData();
+            formData.append('taskId', currentTask.Id);
+            formData.append('userId', userId);
+
+            const response = await fetch('/Project/RemoveTaskMember', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                console.log('Member removed from task successfully');
+
+                if (currentTask.taskUsers) {
+                    currentTask.taskUsers = currentTask.taskUsers.filter(user => user.Id !== userId);
+                }
+
+                updateTaskUsersDisplay();
+                updateMembersDropdownSelection();
+
+            } else {
+                alert('Failed to remove member: ' + (data.message || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error removing member:', error);
+            alert('Error removing member. Please try again.');
+        }
+    }
+
+    function toggleUserAssignment(userItem, userId, userName) {
+        if (!currentTask) {
+            console.error('No current task selected');
+            return;
+        }
+
+        const isCurrentlySelected = userItem.classList.contains('selected');
+
+        if (isCurrentlySelected) {
+            // Remove user from task
+            userItem.classList.remove('selected');
+            removeUserFromTask(userId, userName);
+        } else {
+            // Add user to task
+            userItem.classList.add('selected');
+            addUserToTask(userId, userName);
+        }
+    }
+
+    function filterMembers() {
+        const searchTerm = document.getElementById('membersSearch').value.toLowerCase();
+        const userItems = document.querySelectorAll('#membersList .user-item');
+
+        userItems.forEach(item => {
+            const userName = item.querySelector('span').textContent.toLowerCase();
+            if (userName.includes(searchTerm)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    function updateTaskUsersDisplay() {
+        if (!currentTask) return;
+
+        const taskUsersSection = document.getElementById('taskUsersSection');
+        const taskUsersAvatars = document.getElementById('taskUsersAvatars');
+        const noUsersMessage = document.getElementById('noUsersMessage');
+
+        taskUsersAvatars.innerHTML = '';
+
+        const taskUsers = currentTask.taskUsers || [];
+
+        if (taskUsers.length > 0) {
+            taskUsersSection.style.display = 'block';
+            noUsersMessage.style.display = 'none';
+
+            taskUsers.forEach((user, index) => {
+                const colorIndex = (index % 6) + 1;
+                const avatar = document.createElement('div');
+                avatar.className = `task-user-avatar avatar-color-${colorIndex}`;
+                avatar.title = `${user.UserName} (${user.Email}) - Click to remove`;
+                avatar.innerHTML = user.UserName ? user.UserName.substring(0, 2).toUpperCase() : '?';
+                avatar.onclick = (e) => {
+                    e.stopPropagation();
+                    removeUserFromTask(user.Id, user.UserName);
+                };
+                taskUsersAvatars.appendChild(avatar);
+            });
+        } else {
+            taskUsersSection.style.display = 'none';
+        }
+    }
+
+    function updateMembersDropdownSelection() {
+        if (!currentTask) return;
+
+        const taskUsers = currentTask.taskUsers || [];
+        const userItems = document.querySelectorAll('#membersList .user-item');
+
+        userItems.forEach(item => {
+            const userId = item.getAttribute('data-user-id');
+            const isSelected = taskUsers.some(user => user.Id === userId);
+
+            if (isSelected) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+
+    // ========== Move Task ==========
+    function selectStatus(status, element) {
+        document.querySelectorAll('#statusList .status-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+
+        element.classList.add('selected');
+        selectedStatus = status;
+
+        moveTask(status);
+    }
+
+    async function moveTask(newStatus) {
+        if (!currentTask) return;
+
+        try {
+            const formData = new FormData();
+            formData.append('taskId', currentTask.Id);
+            formData.append('progressStatus', newStatus.toString());
+
+            const response = await fetch('/Project/MoveTask', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+        
+            if (data.success) {
+                closeAllDropdowns();
+
+                const modalSubtitle = document.getElementById('modalSubtitle');
+                modalSubtitle.innerHTML = `in list <strong>${statusNames[newStatus]}</strong>`;
+
+                const taskIndex = tasksData.findIndex(t => t.Id === currentTask.Id);
+                if (taskIndex !== -1) {
+                    tasksData[taskIndex].ProgressStatus = newStatus;
+                }
+
+                currentTask.ProgressStatus = newStatus;
+
+                updateStatusLabels();
+
+                moveTaskCardToColumn(currentTask.Id, newStatus);
+            
+                console.log(`Task moved to ${statusNames[newStatus]} successfully`);
+            } else {
+                alert('Failed to move task: ' + (data.message || 'Unknown error'));
+                closeAllDropdowns();
+            }
+        } catch (error) {
+            console.error('Error moving task:', error);
+            alert('Error moving task. Please try again.');
+            closeAllDropdowns();
+        }
+    }
+
+    // ========== Remove Task ==========
+    async function removeTask() {
+        if (!currentTask) return;
+
+            try {
+                const formData = new FormData();
+                formData.append('taskId', currentTask.Id);
+
+                const response = await fetch('/Project/RemoveTask', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+            
+                if (data.success) {
+                    const taskIndex = tasksData.findIndex(t => t.Id === currentTask.Id);
+                    if (taskIndex !== -1) {
+                        tasksData.splice(taskIndex, 1);
+                    }
+
+                    removeTaskCardFromUI(currentTask.Id);
+                
+                    closeModal();
+                    console.log('Task removed successfully');
+                } else {
+                    alert('Failed to remove task: ' + (data.message || 'Unknown error'));
+                    closeAllDropdowns();
+                }
+            } catch (error) {
+                console.error('Error removing task:', error);
+                alert('Error removing task. Please try again.');
+                closeAllDropdowns();
+            }
+    }
+
+    // ========== Update Task Card ==========
+    function updateTaskCardInUI(taskId, field, value) {
+        const taskCard = document.querySelector(`.task-card[onclick="openTaskModal('${taskId}')"]`);
+        if (!taskCard) return;
+
+        if (field === 'title') {
+            const titleElement = taskCard.querySelector('.task-card-title');
+            if (titleElement) {
+                titleElement.textContent = value;
+            }
+        } else if (field === 'description') {
+            let descriptionElement = taskCard.querySelector('.task-card-description');
+            if (!value.trim()) {
+                if (descriptionElement) {
+                    descriptionElement.remove();
+                }
+            } else {
+                if (!descriptionElement) {
+                    const taskHeader = taskCard.querySelector('.task-card-header');
+                    descriptionElement = document.createElement('p');
+                    descriptionElement.className = 'task-card-description';
+                    taskHeader.parentNode.insertBefore(descriptionElement, taskHeader.nextSibling);
+                }
+                descriptionElement.textContent = value;
+            }
+        }
+    }
+
+    function moveTaskCardToColumn(taskId, newStatus) {
+        const taskCard = document.querySelector(`.task-card[onclick="openTaskModal('${taskId}')"]`);
+        if (!taskCard) return;
+
+        const columns = document.querySelectorAll('.column');
+        let targetColumnContent = null;
+
+        columns.forEach(column => {
+            const header = column.querySelector('.column-header h3');
+            if (header && header.textContent.trim() === statusNames[newStatus]) {
+                targetColumnContent = column.querySelector('.column-content');
+            }
+        });
+
+        if (targetColumnContent) {
+            taskCard.remove();
+        
+            const addButton = targetColumnContent.querySelector('.add-card-btn');
+            if (addButton) {
+                targetColumnContent.insertBefore(taskCard, addButton);
+            } else {
+                targetColumnContent.appendChild(taskCard);
+            }
+        }
+    }
+
+    function removeTaskCardFromUI(taskId) {
+        const taskCard = document.querySelector(`.task-card[onclick="openTaskModal('${taskId}')"]`);
+        if (taskCard) {
+            taskCard.remove();
+        }
+    }
+
+    // ========== Project Name Editing ==========
+    function enableEdit() {
+        const projectNameDisplay = document.getElementById("projectNameDisplay");
+        const projectNameInput = document.getElementById("projectNameInput");
+        const currentWidth = projectNameDisplay.offsetWidth + 20;
+        projectNameInput.style.width = `${currentWidth}px`;
+        projectNameInput.value = projectNameDisplay.textContent.trim();
+
+        projectNameDisplay.style.display = "none";
+        projectNameInput.style.display = "inline-block";
+        projectNameInput.focus();
+        projectNameInput.select();
+    }
+
+    function saveProjectName() {
+        const projectNameDisplay = document.getElementById("projectNameDisplay");
+        const projectNameInput = document.getElementById("projectNameInput");
+        const projectId = "@Model.project.Id";
+
+        const newName = projectNameInput.value.trim();
+        if (newName.length === 0) {
+            alert("Project name cannot be empty.");
+            projectNameInput.focus();
+            return;
+        }
+
+        projectNameDisplay.textContent = newName;
+        projectNameDisplay.style.display = "inline-block";
+        projectNameInput.style.display = "none";
+
+        fetch(`/Project/UpdateProjectName?id=${projectId}&projectName=${encodeURIComponent(newName)}`, {
+            method: "PATCH"
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert("Failed to update project name: " + data.message);
+                }
+            })
+            .catch(err => console.error("Error updating project name:", err));
+    }
+
+    function handleEnter(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            saveProjectName();
+        } else if (event.key === "Escape") {
+            const projectNameInput = document.getElementById("projectNameInput");
+            const projectNameDisplay = document.getElementById("projectNameDisplay");
+            projectNameInput.style.display = "none";
+            projectNameDisplay.style.display = "inline-block";
+        }
+    }
+
+    // Dropdown functions for navbar
+    function toggleDropdown(id) {
+        const dropdown = document.getElementById(id);
+        const allDropdowns = document.querySelectorAll('.dropdown-content');
+
+        allDropdowns.forEach(menu => {
+            if (menu.id !== id) menu.style.display = 'none';
+        });
+
+        if (dropdown.style.display === 'block') {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        const button = event.target.closest('.more-btn');
+        const rect = button.getBoundingClientRect();
+
+        document.body.appendChild(dropdown);
+
+        dropdown.style.display = 'block';
+        dropdown.style.position = 'absolute';
+        dropdown.style.left = `${rect.left + window.scrollX - 100}px`;
+        dropdown.style.top = `${rect.bottom + window.scrollY + 4}px`;
+    }
+
+    window.addEventListener('click', function (event) {
+        if (!event.target.closest('.dropdown')) {
+            document.querySelectorAll('.dropdown-content').forEach(menu => menu.style.display = 'none');
+        }
+    });
+
+    // ========== Open Modal ==========
+    function openTaskModal(taskId) {
+        if (!taskId) {
+            console.error('Task ID is missing!');
+            return;
+        }
+
+        const task = tasksData.find(t => t.Id?.toLowerCase() === taskId.toLowerCase());
+
+        if (!task) {
+            console.error('Task not found for ID:', taskId);
+            return;
+        }
+
+        currentTask = task;
+        const modal = document.getElementById('taskModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalSubtitle = document.getElementById('modalSubtitle');
+        const modalDescription = document.getElementById('modalDescription');
+
+        // Set title
+        modalTitle.value = task.Title || 'Untitled Task';
+        originalTitle = modalTitle.value;
+
+        // Set subtitle
+        const statusName = statusNames[task.ProgressStatus] || 'Unknown';
+        modalSubtitle.innerHTML = `in list <strong>${statusName}</strong>`;
+
+        // Set description
+        if (task.Description) {
+            modalDescription.value = task.Description;
+            modalDescription.classList.remove('empty');
+        } else {
+            modalDescription.value = '';
+            modalDescription.classList.add('empty');
+        }
+        originalDescription = modalDescription.value;
+
+        updateTaskUsersDisplay();
+
+        updateTaskAttachmentsDisplay();
+        updateModalAttachmentsDisplay();
+
+        updateStatusLabels();
+
+        // Show modal
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        initializeDropdowns();
+    }
+
+    // ========== Close Modal ==========
+    function closeModal() {
+        const modal = document.getElementById('taskModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const descriptionControls = document.getElementById('descriptionControls');
+
+        modalTitle.setAttribute('readonly', 'readonly');
+        descriptionControls.classList.remove('active');
+
+        closeAllDropdowns();
+
+        // Close modal
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        currentTask = null;
+        selectedUsers.clear();
+        selectedStatus = null;
+    }
+
+    function handleModalOverlayClick(event) {
+        const modal = document.getElementById('taskModal');
+
+        if (event.target === modal && !isAnyDropdownActive) {
+            closeModal();
+        }
+    }
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            const descriptionControls = document.getElementById('descriptionControls');
+            if (descriptionControls.classList.contains('active')) {
+                cancelDescriptionEdit();
+            } else {
+                closeModal();
+            }
+        }
+    });
+
+    // ========== Sidebar Dropdown ==========
+    function toggleSidebarDropdown(dropdownId, button) {
+        const dropdown = document.getElementById(dropdownId);
+        const allDropdowns = document.querySelectorAll('.sidebar-dropdown');
+
+        allDropdowns.forEach(d => {
+            if (d.id !== dropdownId) d.classList.remove('active');
+        });
+
+        if (dropdown.classList.contains('active')) {
+            dropdown.classList.remove('active');
+            isAnyDropdownActive = false;
+        } else {
+            dropdown.classList.add('active');
+            isAnyDropdownActive = true;
+            positionDropdown(dropdown, button);
+        }
+    }
+
+    function positionDropdown(dropdown, button) {
+        const buttonRect = button.getBoundingClientRect();
+        const dropdownRect = dropdown.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        let left = buttonRect.right + 8;
+        let top = buttonRect.top;
+
+        if (left + dropdownRect.width > viewportWidth - 16) {
+            left = buttonRect.left - dropdownRect.width - 8;
+        }
+
+        if (top + dropdownRect.height > viewportHeight - 16) {
+            top = viewportHeight - dropdownRect.height - 16;
+        }
+
+        if (top < 16) {
+            top = 16;
+        }
+
+        dropdown.style.position = 'fixed';
+        dropdown.style.left = left + 'px';
+        dropdown.style.top = top + 'px';
+        dropdown.style.zIndex = '10002';
+    }
+
+    function closeAllDropdowns() {
+        document.querySelectorAll('.sidebar-dropdown').forEach(d => {
+            d.classList.remove('active');
+        });
+        isAnyDropdownActive = false;
+    }
+
+    document.addEventListener('click', function (e) {
+        const clickedElement = e.target;
+
+        const modal = document.getElementById('taskModal');
+        if (!modal.classList.contains('active')) return;
+
+        if (clickedElement.closest('.sidebar-btn')) {
+            return;
+        }
+
+        if (!clickedElement.closest('.sidebar-dropdown')) {
+            closeAllDropdowns();
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalContent = document.querySelector('.task-modal');
+        if (modalContent) {
+            modalContent.addEventListener('click', function (e) {
+                if (isAnyDropdownActive && !e.target.closest('.sidebar-btn')) {
+                    closeAllDropdowns();
+                }
+            });
+        }
+
+        initializeDropdowns();
+    });
+
+    function initializeDropdowns() {
+        populateMembersList();
+        setupFileUpload();
+    }
+
+    // ========== File Upload ==========
+    function setupFileUpload() {
+        const uploadArea = document.getElementById('fileUploadArea');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+    
+            const files = Array.from(e.dataTransfer.files);
+            if (files.length > 0) {
+                handleFileUpload(files);
+            }
+        });
+    }
+
+    function handleFileInputChange(files) {
+        const fileArray = Array.from(files);
+        if (fileArray.length > 0) {
+            console.log('Selected files:', fileArray.length);
+            handleFileUpload(fileArray);
+            document.getElementById('fileInput').value = '';
+        }
+    }
+
+    async function handleFileUpload(files) {
+        if (!files.length) return;
+        if (!currentTask) {
+            alert('Please select a task first');
+            return;
+        }
+
+        console.log('Uploading', files.length, 'files');
+
+        const uploadResults = await uploadFilesToServer(files);
+    
+        let successCount = 0;
+        for (const result of uploadResults) {
+            if (result.success) {
+                await createTaskAttachmentRecord(result);
+                successCount++;
+            }
+        }
+
+        if (successCount > 0) {
+            console.log(`Successfully uploaded ${successCount} out of ${files.length} files`);
+        }
+    }
+
+    async function uploadFilesToServer(files) {
+        const formData = new FormData();
+    
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);
+        }
+
+        try {
+            const response = await fetch('/Project/UploadAttachments', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+        
+            if (data.success) {
+                console.log('Batch upload successful:', data.results);
+                return data.results;
+            } else {
+                alert('Upload failed: ' + data.message);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error uploading files:', error);
+            alert('Error uploading files. Please try again.');
+            return [];
+        }
+    }
+
+    async function createTaskAttachmentRecord(uploadResult) {
+        try {
+            const formData = new FormData();
+            formData.append('taskId', currentTask.Id);
+            formData.append('fileName', uploadResult.originalName);
+            formData.append('filePath', uploadResult.path);
+
+            const response = await fetch('/Project/CreateTaskAttachment', {
+                method: 'POST',
+                body: formData
+            });
+
+            const responseText = await response.text();
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Failed to parse response as JSON:', parseError);
+                return null;
+            }
+
+            if (data.success && data.taskAttachment) {
+                const newAttachment = {
+                    Id: data.taskAttachment.id,
+                    TaskId: data.taskAttachment.taskId,
+                    FileName: data.taskAttachment.fileName,
+                    FilePath: data.taskAttachment.filePath
+                };
+                console.log('Created new attachment:', newAttachment);
+
+                if (!currentTask.taskAttachments) {
+                    currentTask.taskAttachments = [];
+                }
+                currentTask.taskAttachments.push(newAttachment);
+    
+                updateTaskAttachmentsDisplay();
+                updateModalAttachmentsDisplay();
+                return newAttachment;
+            } else {
+                console.error('Failed to create attachment record. Success:', data.success, 'Message:', data.message);
+                return null;
+            }
+        } catch (error) {
+            console.error('Error creating attachment record:', error);
+            return null;
+        }
+    }
+
+    async function downloadAttachmentFromModel(attachmentId) {
+        const attachment = currentTask.taskAttachments?.find(a => a.Id == attachmentId);
+        if (attachment && attachment.FilePath) {
+            try {
+                const response = await fetch(attachment.FilePath);
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = attachment.FileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+            } catch (error) {
+                console.error('Error downloading attachment:', error);
+                window.open(attachment.FilePath, '_blank');
+            }
+        }
+    }
+
+    async function removeAttachmentFromModel(attachmentId) {
+        try {
+            const formData = new FormData();
+            formData.append('attachmentId', attachmentId);
+
+            const response = await fetch('/Project/RemoveAttachment', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+    
+            if (result.success) {
+                if (currentTask.taskAttachments) {
+                    currentTask.taskAttachments = currentTask.taskAttachments.filter(a => a.Id != attachmentId);
+                }
+    
+                updateTaskAttachmentsDisplay();
+                updateModalAttachmentsDisplay();
+    
+                console.log('Attachment deleted successfully');
+            } else {
+                alert('Failed to delete attachment: ' + (result.message || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error deleting attachment:', error);
+            alert('Error deleting attachment. Please try again.');
+        }
+    }
+
+    function getFileType(fileName) {
+        const extension = fileName.split('.').pop().toLowerCase();
+        const typeMap = {
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'gif': 'image/gif',
+            'pdf': 'application/pdf',
+            'doc': 'application/msword',
+            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls': 'application/vnd.ms-excel',
+            'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'txt': 'text/plain'
+        };
+        return typeMap[extension] || 'application/octet-stream';
+    }
+
+    function updateTaskAttachmentsDisplay() {
+        const attachmentsList = document.getElementById('attachmentsList');
+        attachmentsList.innerHTML = '';
+
+        if (!currentTask.taskAttachments || currentTask.taskAttachments.length === 0) {
+            attachmentsList.innerHTML = '<div class="no-results">No attachments</div>';
+            return;
+        }
+
+        currentTask.taskAttachments.forEach(attachment => {
+            addAttachmentToList(attachment);
+        });
+    }
+
+    function addAttachmentToList(attachment) {
+        const attachmentsList = document.getElementById('attachmentsList');
+    
+        const noResults = attachmentsList.querySelector('.no-results');
+        if (noResults) {
+            noResults.remove();
+        }
+
+        const fileIcon = getFileIcon(attachment.FileName);
+        const attachmentElement = document.createElement('div');
+        attachmentElement.className = 'attachment-preview';
+        attachmentElement.innerHTML = `
+            <i class="bi ${fileIcon} attachment-icon"></i>
+            <div class="attachment-info">
+                <span class="attachment-name">${attachment.FileName}</span>
+                <span class="file-size">${formatDate(attachment.CreatedDateTime)}</span>
+            </div>
+            <div class="attachment-actions">
+                <button class="action-btn" onclick="downloadAttachmentFromModel('${attachment.Id}')" title="Download">
+                    <i class="bi bi-download"></i>
+                </button>
+                <button class="action-btn" onclick="removeAttachmentFromModel('${attachment.Id}')" title="Delete">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+        attachmentsList.appendChild(attachmentElement);
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    }
+
+    function getFileIcon(fileName) {
+        if (!fileName) return 'bi-file-earmark';
+        const extension = fileName.split('.').pop().toLowerCase();
+        const iconMap = {
+            'jpg': 'bi-file-image',
+            'jpeg': 'bi-file-image',
+            'png': 'bi-file-image',
+            'gif': 'bi-file-image',
+            'pdf': 'bi-file-pdf',
+            'doc': 'bi-file-word',
+            'docx': 'bi-file-word',
+            'xls': 'bi-file-excel',
+            'xlsx': 'bi-file-excel',
+            'txt': 'bi-file-text',
+            'zip': 'bi-file-zip',
+            'rar': 'bi-file-zip'
+        };
+        return iconMap[extension] || 'bi-file-earmark';
+    }
+
+    function removeAttachment(attachmentId) {
+        currentAttachments = currentAttachments.filter(a => a.id != attachmentId);
+        const attachmentsList = document.getElementById('attachmentsList');
+        const attachmentElement = attachmentsList.querySelector(`[onclick*="${attachmentId}"]`)?.closest('.attachment-preview');
+        if (attachmentElement) {
+            attachmentElement.remove();
+        }
+    }
+
+    function updateModalAttachmentsDisplay() {
+        const attachmentsSection = document.getElementById('attachmentsSection');
+        const modalAttachmentsList = document.getElementById('modalAttachmentsList');
+
+        // Use the taskAttachments from the current task model data
+        if (!currentTask.taskAttachments || currentTask.taskAttachments.length === 0) {
+            attachmentsSection.style.display = 'none';
+            modalAttachmentsList.innerHTML = '';
+            return;
+        }
+
+        // Show the attachments section
+        attachmentsSection.style.display = 'block';
+        modalAttachmentsList.innerHTML = '';
+
+        // Add each attachment to the main modal area
+        currentTask.taskAttachments.forEach(attachment => {
+            addAttachmentToModalList(attachment);
+        });
+    }
+
+    function addAttachmentToModalList(attachment) {
+        const modalAttachmentsList = document.getElementById('modalAttachmentsList');
+
+        const fileIcon = getFileIcon(attachment.FileName);
+        const uploadDate = formatDate(attachment.CreatedDateTime);
+
+        const attachmentElement = document.createElement('div');
+        attachmentElement.className = 'attachment-item';
+        attachmentElement.innerHTML = `
+                <div class="attachment-icon-large">
+                    <i class="bi ${fileIcon}"></i>
+                </div>
+                <div class="attachment-details">
+                    <span class="attachment-name">${attachment.FileName}</span>
+                    <div class="attachment-meta">
+                        <span>Added ${uploadDate}</span>
+                    </div>
+                </div>
+                <div class="attachment-actions-modal">
+                    <button class="action-btn-modal" onclick="downloadAttachmentFromModel('${attachment.Id}')" title="Download">
+                        <i class="bi bi-download"></i>
+                        Download
+                    </button>
+                    <button class="action-btn-modal" onclick="removeAttachmentFromModel('${attachment.Id}')" title="Delete">
+                        <i class="bi bi-trash"></i>
+                        Delete
+                    </button>
+                </div>
+            `;
+
+        modalAttachmentsList.appendChild(attachmentElement);
+    }
+
+    // ========== Progress Status Editing ==========
+    function updateStatusLabels() {
+        if (!currentTask) return;
+
+        const statusOptions = document.querySelectorAll('#statusList .status-option');
+        statusOptions.forEach(option => {
+            const statusValue = parseInt(option.getAttribute('data-status'));
+        
+            const existingLabel = option.querySelector('span');
+            if (existingLabel) {
+                existingLabel.remove();
+            }
+        
+            const baseText = option.textContent.trim();
+        
+            option.innerHTML = baseText;
+
+            if (statusValue === currentTask.ProgressStatus) {
+                const currentLabel = document.createElement('span');
+                currentLabel.style.cssText = 'color: #0079bf; font-weight: 600; margin-left: 8px;';
+                currentLabel.textContent = '(Current)';
+                option.appendChild(currentLabel);
+            }
+        });
+    }
+
+    // ========== Create Task ==========
+    function showAddTaskForm(status) {
+        document.querySelectorAll('.add-task-form').forEach(form => {
+            form.style.display = 'none';
+        });
+
+        const form = document.getElementById(`addTaskForm_${status}`);
+        const input = document.getElementById(`taskTitleInput_${status}`);
+
+        form.style.display = 'block';
+        input.focus();
+
+        const addButton = form.nextElementSibling;
+        if (addButton && addButton.classList.contains('add-card-btn')) {
+            addButton.style.display = 'none';
+        }
+    }
+
+    function cancelTaskCreation(status) {
+        const form = document.getElementById(`addTaskForm_${status}`);
+        const input = document.getElementById(`taskTitleInput_${status}`);
+        const addButton = form.nextElementSibling;
+
+        input.value = '';
+        form.style.display = 'none';
+
+        if (addButton && addButton.classList.contains('add-card-btn')) {
+            addButton.style.display = 'flex';
+        }
+    }
+
+    function createTask(status) {
+        const input = document.getElementById(`taskTitleInput_${status}`);
+        const title = input.value.trim();
+
+        if (!title) {
+            alert('Please enter a task title');
+            input.focus();
+            return;
+        }
+
+        const projectId = "@Model.project.Id";
+
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('progressStatus', status.toString());
+        formData.append('projectId', projectId);
+
+        fetch('/Project/CreateTask', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    cancelTaskCreation(status);
+
+                    if (data.task) {
+                        addTaskToUI(data.task);
+                        tasksData.push(data.task);
+                    } else {
+                        const minimalTaskData = {
+                            Id: 'temp_' + Date.now(),
+                            Title: title,
+                            ProgressStatus: status,
+                            Description: '',
+                            DueDate: null
+                        };
+                        addTaskToUI(minimalTaskData);
+                    }
+                } else {
+                    alert('Failed to create task: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error creating task:', error);
+                alert('Error creating task. Please try again.');
+            });
+    }
+
+    function addTaskToUI(taskData) {
+        console.log('addTaskToUI called with:', taskData);
+
+        const status = taskData.progressStatus !== undefined ? taskData.progressStatus : taskData.ProgressStatus;
+        const taskId = taskData.id || taskData.Id;
+
+        if (status === undefined || !taskId) {
+            console.error('Status or Task ID is undefined in task data:', taskData);
+            return;
+        }
+
+        const columns = document.querySelectorAll('.column');
+        let targetColumn = null;
+
+        columns.forEach(column => {
+            const header = column.querySelector('.column-header h3');
+            if (header) {
+                const statusMapping = {
+                    1: 'To Do',
+                    2: 'In Progress',
+                    3: 'Done',
+                    4: 'To Be Reviewed',
+                    5: 'To Be Corrected'
+                };
+
+                if (header.textContent.trim() === statusMapping[status]) {
+                    targetColumn = column.querySelector('.column-content');
+                }
+            }
+        });
+
+        if (!targetColumn) {
+            const form = document.getElementById(`addTaskForm_${status}`);
+            if (form) {
+                targetColumn = form.closest('.column-content');
+            } else {
+                targetColumn = document.querySelector('.column-content');
+            }
+        }
+
+        if (!targetColumn) {
+            console.error('Could not find any target column!');
+            return;
+        }
+
+        const dueDate = taskData.dueDate || taskData.DueDate;
+        const isOverdue = dueDate && new Date(dueDate) < new Date();
+        const isDueSoon = dueDate && new Date(dueDate) <= new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+
+        const description = taskData.description || taskData.Description || '';
+
+        const taskCard = document.createElement('div');
+        taskCard.className = 'task-card';
+        taskCard.setAttribute('onclick', `openTaskModal('${taskId}')`);
+
+        let dueDateHtml = '';
+        if (dueDate) {
+            const dueDateObj = new Date(dueDate);
+            dueDateHtml = `
+                <div class="task-card-meta">
+                    <div class="date-badge ${isOverdue ? 'overdue' : isDueSoon ? 'due-soon' : ''}">
+                        <i class="bi bi-calendar-event"></i> ${dueDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </div>
+                </div>
+            `;
+        }
+
+        let descriptionHtml = '';
+        if (description && description.trim() !== '') {
+            descriptionHtml = `<p class="task-card-description">${description}</p>`;
+        }
+
+        taskCard.innerHTML = `
+            <div class="task-card-header">
+                <h4 class="task-card-title">${taskData.title || taskData.Title}</h4>
+            </div>
+            ${descriptionHtml}
+            ${dueDateHtml}
+        `;
+
+        const addButton = targetColumn.querySelector('.add-card-btn');
+        if (addButton) {
+            targetColumn.insertBefore(taskCard, addButton);
+        } else {
+            targetColumn.appendChild(taskCard);
+        }
+
+        const formattedTaskData = {
+            Id: taskId,
+            Title: taskData.title || taskData.Title,
+            Description: description,
+            ProgressStatus: status,
+            DueDate: dueDate
+        };
+
+        tasksData.push(formattedTaskData);
+    }
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('.add-task-form') && !event.target.closest('.add-card-btn')) {
+            document.querySelectorAll('.add-task-form').forEach(form => {
+                const status = form.id.split('_')[1];
+                cancelTaskCreation(status);
+            });
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && event.ctrlKey) {
+            const activeInput = document.querySelector('.task-title-input:focus');
+            if (activeInput) {
+                const status = activeInput.id.split('_')[1];
+                createTask(parseInt(status));
+            }
+        }
+
+        if (event.key === 'Escape') {
+            const activeInput = document.querySelector('.task-title-input:focus');
+            if (activeInput) {
+                const status = activeInput.id.split('_')[1];
+                cancelTaskCreation(parseInt(status));
+            }
+        }
+    });
+</script>

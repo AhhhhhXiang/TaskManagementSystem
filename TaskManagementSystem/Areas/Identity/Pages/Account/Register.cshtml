@@ -1,0 +1,181 @@
+﻿@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Register";
+}
+
+<style>
+    body {
+        background-color: #1a1d23;
+        color: #e9ecef;
+    }
+
+    .register-container {
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem 0;
+    }
+
+    .register-card {
+        width: 100%;
+        max-width: 420px;
+        background-color: #2d3748;
+        border: 1px solid #4a5568;
+        border-radius: 1rem;
+        padding: 20px;
+    }
+
+    .dark-input {
+        background-color: #4a5568 !important;
+        border: 1px solid #4a5568 !important;
+        color: #e2e8f0 !important;
+    }
+
+        .dark-input:focus {
+            background-color: #4a5568 !important;
+            border-color: #63b3ed !important;
+            color: #e2e8f0 !important;
+            box-shadow: 0 0 0 0.25rem rgba(99, 179, 237, 0.25);
+        }
+
+    .btn-primary {
+        background-color: #3182ce !important;
+        border: none;
+    }
+
+        .btn-primary:hover {
+            background-color: #63b3ed !important;
+        }
+
+    .modal-content {
+        border-radius: 1rem;
+        background-color: #2d3748 !important;
+        color: #e2e8f0 !important;
+        border: 1px solid #4a5568 !important;
+    }
+
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    textarea:-webkit-autofill,
+    select:-webkit-autofill {
+        background-color: #4a5568 !important;
+        color: #e2e8f0 !important;
+        -webkit-box-shadow: 0 0 0 1000px #4a5568 inset !important;
+        box-shadow: 0 0 0 1000px #4a5568 inset !important;
+        -webkit-text-fill-color: #e2e8f0 !important;
+        caret-color: #e2e8f0 !important;
+        transition: background-color 5000s ease-in-out 0s;
+    }
+
+    input:-moz-autofill {
+        background-color: #4a5568 !important;
+        color: #e2e8f0 !important;
+    }
+</style>
+
+<div class="register-container d-flex align-items-center justify-content-center">
+    <div class="card register-card shadow-lg">
+        <div class="card-body p-4">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold text-light mb-2">
+                    <i class="bi bi-person-plus me-2"></i>Create Account
+                </h3>
+                <p class="text-muted mb-0">Join us to manage your tasks efficiently</p>
+            </div>
+
+            <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" novalidate>
+                <!-- Username -->
+                <div class="form-floating mb-3">
+                    <input asp-for="Input.Username" class="form-control dark-input" autocomplete="username" placeholder="Username" required />
+                    <label asp-for="Input.Username">Username</label>
+                    <span asp-validation-for="Input.Username" class="text-danger"></span>
+                </div>
+
+                <!-- Email -->
+                <div class="form-floating mb-3">
+                    <input asp-for="Input.Email" type="email" class="form-control dark-input" placeholder="Email" required />
+                    <label asp-for="Input.Email">Email</label>
+                    <span asp-validation-for="Input.Email" class="text-danger"></span>
+                </div>
+
+                <!-- Password -->
+                <div class="form-floating mb-3">
+                    <input asp-for="Input.Password"
+                           type="password"
+                           class="form-control dark-input"
+                           autocomplete="new-password"
+                           aria-required="true"
+                           placeholder="Password"
+                           required
+                           data-val="true"
+                           data-val-required="The Password field is required."
+                           data-val-regex="Password must be 6–100 characters and include at least one uppercase letter."
+                           data-val-regex-pattern="^(?=.*[A-Z]).{6,100}$" />
+                    <label asp-for="Input.Password">Password</label>
+                    <span asp-validation-for="Input.Password" class="text-danger"></span>
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="form-floating mb-4">
+                    <input asp-for="Input.ConfirmPassword" type="password" class="form-control dark-input" placeholder="Confirm Password" required />
+                    <label asp-for="Input.ConfirmPassword">Confirm Password</label>
+                    <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+                </div>
+
+                <div class="d-grid mb-3">
+                    <button id="registerSubmit" type="submit" class="btn btn-primary btn-lg rounded-3 fw-semibold">
+                        <i class="bi bi-person-plus me-2"></i>Register
+                    </button>
+                </div>
+
+                <div class="text-center mt-3">
+                    <p class="text-light">
+                        Already have an account?
+                        <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl" class="text-info text-decoration-none">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Login here
+                        </a>
+                    </p>
+                </div>
+            </form>
+
+            <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content bg-dark text-light">
+                        <div class="modal-body text-center">
+                            <i class="bi bi-exclamation-triangle text-warning fs-2 mb-2"></i>
+                            <div class="text-danger" id="errorList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var errorList = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewData["RegisterErrors"] ?? new List<string>()));
+
+            if (errorList.length > 0) {
+                var listHtml = "<ul class='list-unstyled text-start d-inline-block'>";
+                errorList.forEach(function (err) {
+                    listHtml += "<li> " + err + "</li>";
+                });
+                listHtml += "</ul>";
+                document.getElementById('errorList').innerHTML = listHtml;
+
+                var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                errorModal.show();
+
+                setTimeout(function () {
+                    errorModal.hide();
+                }, 2000);
+            }
+        });
+    </script>
+}
