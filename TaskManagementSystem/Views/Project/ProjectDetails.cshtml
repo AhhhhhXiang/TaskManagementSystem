@@ -1225,6 +1225,320 @@
         font-style: italic;
     }
 
+    /* Add member Modal */
+    /* Simplified Add Member Modal Styles */
+    .add-member-modal {
+        background-color: #2b2f36;
+        border-radius: 8px;
+        width: 450px;
+        max-width: 90vw;
+        margin: 0 auto;
+        position: relative;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        z-index: 10001;
+        overflow: hidden;
+    }
+
+    .add-member-modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .add-member-modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #e9ecef;
+        margin: 0;
+    }
+
+    .add-member-modal-close-btn {
+        background: transparent;
+        border: none;
+        color: #9fadbc;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 3px;
+        transition: background-color 0.2s;
+    }
+
+        .add-member-modal-close-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #e9ecef;
+        }
+
+    .add-member-modal-body {
+        padding: 20px;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    .add-member-search {
+        width: 100%;
+        background-color: #1a1d23;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 10px 12px;
+        color: #e9ecef;
+        font-size: 14px;
+        margin-bottom: 16px;
+        box-sizing: border-box;
+    }
+
+        .add-member-search:focus {
+            outline: 2px solid #0079bf;
+            border-color: #0079bf;
+        }
+
+    .add-member-users-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .add-member-user-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        border: 1px solid transparent;
+    }
+
+        .add-member-user-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .add-member-user-item.selected {
+            background-color: rgba(0, 121, 191, 0.2);
+            border-color: #0079bf;
+        }
+
+    .add-member-user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    .add-member-user-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .add-member-user-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: #e9ecef;
+    }
+
+    .add-member-user-email {
+        font-size: 12px;
+        color: #9fadbc;
+    }
+
+    .add-member-checkbox {
+        width: 18px;
+        height: 18px;
+        border: 2px solid #5e6c84;
+        border-radius: 3px;
+        background: transparent;
+        cursor: pointer;
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    .add-member-user-item.selected .add-member-checkbox {
+        background-color: #0079bf;
+        border-color: #0079bf;
+    }
+
+        .add-member-user-item.selected .add-member-checkbox::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+    .add-member-no-users {
+        text-align: center;
+        color: #9fadbc;
+        font-size: 14px;
+        padding: 20px;
+        font-style: italic;
+    }
+
+    .add-member-no-admin-message {
+        text-align: center;
+        color: #9fadbc;
+        font-size: 14px;
+        padding: 20px;
+    }
+
+    /* Delete Project Modal Styles */
+    .delete-project-modal {
+        background-color: #2b2f36;
+        border-radius: 8px;
+        width: 400px;
+        max-width: 90vw;
+        margin: 0 auto;
+        position: relative;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        z-index: 10001;
+        overflow: hidden;
+    }
+
+    .delete-project-modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .delete-project-modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #e9ecef;
+        margin: 0;
+    }
+
+    .delete-project-modal-close-btn {
+        background: transparent;
+        border: none;
+        color: #9fadbc;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 3px;
+        transition: background-color 0.2s;
+    }
+
+        .delete-project-modal-close-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #e9ecef;
+        }
+
+    .delete-project-modal-body {
+        padding: 20px;
+        text-align: center;
+    }
+
+    .delete-project-warning {
+        background-color: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.3);
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .delete-project-warning-icon {
+        font-size: 24px;
+        color: #dc3545;
+        margin-bottom: 8px;
+    }
+
+    .delete-project-warning-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #e9ecef;
+        margin-bottom: 8px;
+    }
+
+    .delete-project-warning-text {
+        font-size: 14px;
+        color: #9fadbc;
+        line-height: 1.4;
+    }
+
+    .delete-project-confirmation {
+        margin-bottom: 20px;
+    }
+
+    .delete-project-confirmation-text {
+        font-size: 14px;
+        color: #e9ecef;
+        margin-bottom: 12px;
+    }
+
+    .delete-project-input {
+        width: 100%;
+        background-color: #1a1d23;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 10px 12px;
+        color: #e9ecef;
+        font-size: 14px;
+        margin-bottom: 16px;
+        box-sizing: border-box;
+    }
+
+        .delete-project-input:focus {
+            outline: 2px solid #dc3545;
+            border-color: #dc3545;
+        }
+
+    .delete-project-modal-footer {
+        padding: 16px 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .delete-project-btn {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .delete-project-btn:hover:not(:disabled) {
+            background-color: #c82333;
+        }
+
+        .delete-project-btn:disabled {
+            background-color: #5e6c84;
+            cursor: not-allowed;
+        }
+
+    .delete-project-cancel-btn {
+        background-color: transparent;
+        color: #9fadbc;
+        border: 1px solid #5e6c84;
+        border-radius: 4px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .delete-project-cancel-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
 </style>
 
 <!-- Navbar -->
@@ -1252,7 +1566,11 @@
                 var colorClass = $"avatar-color-{colorIndex}";
                 colorIndex = colorIndex >= 6 ? 1 : colorIndex + 1;
 
-                <div class="user-avatar @colorClass" title="@user.UserName">@initials</div>
+                <div class="user-avatar @colorClass"
+                     title="@user.UserName"
+                     data-user-id="@user.Id">
+                    @initials
+                </div>
             }
         }
 
@@ -1261,8 +1579,15 @@
                 <i class="bi bi-three-dots"></i>
             </button>
             <div id="projectActionsDropdown" class="dropdown-content">
-                <a href="#">Add Member</a>
-                <a href="#">Delete Project</a>
+                @if (Model?.users != null && Model.users.Count > 0)
+                {
+                    <a href="#" onclick="openAddMemberModal()">Manage Members</a>
+                }
+                else
+                {
+                    <a href="#" style="color: #9fadbc; cursor: not-allowed;" title="Only administrators can manage members">Manage Members</a>
+                }
+                <a href="#" onclick="openDeleteProjectModal()">Delete Project</a>
             </div>
         </div>
     </div>
@@ -1335,6 +1660,78 @@
             </div>
         </div>
     }
+</div>
+
+<!-- Add Member Modal -->
+<div class="modal-overlay" id="addMemberModal" onclick="closeAddMemberModal()">
+    <div class="add-member-modal" onclick="event.stopPropagation()">
+        <div class="add-member-modal-header">
+            <h3 class="add-member-modal-title">Manage Project Members</h3>
+            <button class="add-member-modal-close-btn" onclick="closeAddMemberModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="add-member-modal-body">
+            @if (Model?.users != null && Model.users.Count > 0)
+            {
+                <input type="text"
+                       class="add-member-search"
+                       id="addMemberSearch"
+                       placeholder="Search users by name or email..."
+                       onkeyup="filterAddMemberUsers()">
+
+                <div class="add-member-users-list" id="addMemberUsersList">
+                    <!-- All users will be populated here with checkboxes -->
+                </div>
+            }
+            else
+            {
+                <div class="add-member-no-admin-message">
+                    <i class="bi bi-shield-exclamation" style="font-size: 24px; margin-bottom: 8px;"></i>
+                    <p>Only administrators can manage project members.</p>
+                    <p style="font-size: 12px; margin-top: 8px;">Please contact an administrator to manage project members.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Delete Project Confirmation Modal -->
+<div class="modal-overlay" id="deleteProjectModal" onclick="closeDeleteProjectModal()">
+    <div class="delete-project-modal" onclick="event.stopPropagation()">
+        <div class="delete-project-modal-header">
+            <h3 class="delete-project-modal-title">Delete Project</h3>
+            <button class="delete-project-modal-close-btn" onclick="closeDeleteProjectModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="delete-project-modal-body">
+            <div class="delete-project-warning">
+                <div class="delete-project-warning-icon">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <div class="delete-project-warning-title">This action cannot be undone</div>
+                <div class="delete-project-warning-text">
+                    This will permanently delete the project, all tasks, attachments, and member associations.
+                </div>
+            </div>
+
+            <div class="delete-project-confirmation">
+                <div class="delete-project-confirmation-text">
+                    Are you sure you want to delete the project <strong>"@Model?.project.Name"</strong>?
+                </div>
+            </div>
+        </div>
+
+        <div class="delete-project-modal-footer">
+            <button class="delete-project-cancel-btn" onclick="closeDeleteProjectModal()">Cancel</button>
+            <button class="delete-project-btn" id="deleteProjectConfirmBtn" onclick="deleteProject()">
+                Delete Project
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- Modal -->
@@ -1714,6 +2111,11 @@
 
     // ========== Member Management ==========
     async function addUserToTask(userId, userName) {
+        if (!currentTask) {
+            console.error('No current task selected');
+            return;
+        }
+
         try {
             const formData = new FormData();
             formData.append('taskId', currentTask.Id);
@@ -1727,40 +2129,96 @@
             const data = await response.json();
 
             if (data.success) {
-                console.log('Member added to task successfully');
-
-                // Update current task data
+                // Update the current task data
                 if (!currentTask.taskUsers) {
                     currentTask.taskUsers = [];
                 }
 
-                // Add user to task users array
-                currentTask.taskUsers.push({
-                    Id: userId,
-                    UserName: userName,
-                    Email: usersData.find(u => u.Id === userId)?.Email || ''
-                });
+                // Add user to task users if not already present
+                if (!currentTask.taskUsers.some(user => user.Id === userId)) {
+                    currentTask.taskUsers.push({
+                        Id: userId,
+                        UserName: userName,
+                        Email: '' // You might want to include email if available
+                    });
+                }
 
                 // Update UI
                 updateTaskUsersDisplay();
+                updateMembersDropdownSelection();
 
+                console.log('Member added to task successfully');
+                return true;
             } else {
                 alert('Failed to add member: ' + (data.message || 'Unknown error'));
-                // Revert UI selection
-                const userItem = document.querySelector(`[data-user-id="${userId}"]`);
-                if (userItem) {
-                    userItem.classList.remove('selected');
-                }
+                return false;
             }
         } catch (error) {
             console.error('Error adding member:', error);
             alert('Error adding member. Please try again.');
-            // Revert UI selection
-            const userItem = document.querySelector(`[data-user-id="${userId}"]`);
-            if (userItem) {
-                userItem.classList.remove('selected');
-            }
+            return false;
         }
+    }
+
+    async function removeUserFromTask(userId, userName) {
+        if (!currentTask) {
+            console.error('No current task selected');
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('taskId', currentTask.Id);
+            formData.append('userId', userId);
+
+            const response = await fetch('/Project/RemoveTaskMember', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Remove user from current task data
+                if (currentTask.taskUsers) {
+                    currentTask.taskUsers = currentTask.taskUsers.filter(user => user.Id !== userId);
+                }
+
+                // Update UI
+                updateTaskUsersDisplay();
+                updateMembersDropdownSelection();
+
+                console.log('Member removed from task successfully');
+                return true;
+            } else {
+                alert('Failed to remove member: ' + (data.message || 'Unknown error'));
+                return false;
+            }
+        } catch (error) {
+            console.error('Error removing member:', error);
+            alert('Error removing member. Please try again.');
+            return false;
+        }
+    }
+
+    async function addUserToProject(projectId, userId) {
+        const formData = new FormData();
+        formData.append('projectId', projectId);
+        formData.append('userId', userId);
+
+        const response = await fetch('/Project/AddProjectMember', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+        console.log('Add Project Member Response:', data);
+
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to add user to project');
+        }
+
+        return data;
     }
 
     function populateMembersList() {
@@ -1798,36 +2256,24 @@
         });
     }
 
-    async function removeUserFromTask(userId, userName) {
-        try {
-            const formData = new FormData();
-            formData.append('taskId', currentTask.Id);
-            formData.append('userId', userId);
+    async function removeUserFromProject(projectId, userId) {
+        const formData = new FormData();
+        formData.append('projectId', projectId);
+        formData.append('userId', userId);
 
-            const response = await fetch('/Project/RemoveTaskMember', {
-                method: 'POST',
-                body: formData
-            });
+        const response = await fetch('/Project/RemoveProjectMember', {
+            method: 'POST',
+            body: formData
+        });
 
-            const data = await response.json();
+        const data = await response.json();
+        console.log('Remove Project Member Response:', data);
 
-            if (data.success) {
-                console.log('Member removed from task successfully');
-
-                if (currentTask.taskUsers) {
-                    currentTask.taskUsers = currentTask.taskUsers.filter(user => user.Id !== userId);
-                }
-
-                updateTaskUsersDisplay();
-                updateMembersDropdownSelection();
-
-            } else {
-                alert('Failed to remove member: ' + (data.message || 'Unknown error'));
-            }
-        } catch (error) {
-            console.error('Error removing member:', error);
-            alert('Error removing member. Please try again.');
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to remove user from project');
         }
+
+        return data;
     }
 
     function toggleUserAssignment(userItem, userId, userName) {
@@ -1840,12 +2286,18 @@
 
         if (isCurrentlySelected) {
             // Remove user from task
-            userItem.classList.remove('selected');
-            removeUserFromTask(userId, userName);
+            removeUserFromTask(userId, userName).then(success => {
+                if (success) {
+                    userItem.classList.remove('selected');
+                }
+            });
         } else {
             // Add user to task
-            userItem.classList.add('selected');
-            addUserToTask(userId, userName);
+            addUserToTask(userId, userName).then(success => {
+                if (success) {
+                    userItem.classList.add('selected');
+                }
+            });
         }
     }
 
@@ -2902,6 +3354,342 @@
             if (activeInput) {
                 const status = activeInput.id.split('_')[1];
                 cancelTaskCreation(parseInt(status));
+            }
+        }
+    });
+
+    // ========== Add Member Modal ==========
+    let membershipChanges = new Map();
+
+    function openAddMemberModal() {
+        if (!@(Model?.users != null && Model.users.Count > 0 ? "true" : "false")) {
+            alert('Only administrators can manage project members.');
+            return;
+        }
+
+        const modal = document.getElementById('addMemberModal');
+
+        populateAddMemberUsersList();
+
+        document.getElementById('addMemberSearch').value = '';
+
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeAddMemberModal() {
+        const modal = document.getElementById('addMemberModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    function populateAddMemberUsersList() {
+        const usersList = document.getElementById('addMemberUsersList');
+        usersList.innerHTML = '';
+
+        const currentProjectMemberIds = new Set(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model?.project?.projectUsers?.Select(pu => pu.Id.ToString()) ?? new List<string>()
+            )));
+
+        const availableUsers = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model?.users ?? new List<UserReturnModel>()));
+
+        if (availableUsers.length === 0) {
+            usersList.innerHTML = '<div class="add-member-no-users">No users available</div>';
+            return;
+        }
+
+        availableUsers.forEach((user, index) => {
+            const colorIndex = (index % 6) + 1;
+
+            const hasLocalChange = membershipChanges.has(user.Id);
+            let isCurrentMember;
+
+            if (hasLocalChange) {
+                isCurrentMember = membershipChanges.get(user.Id);
+            } else {
+                isCurrentMember = currentProjectMemberIds.has(user.Id.toString());
+            }
+
+            const userItem = document.createElement('div');
+            userItem.className = `add-member-user-item ${isCurrentMember ? 'selected' : ''}`;
+
+            userItem.innerHTML = `
+                <div class="add-member-user-avatar avatar-color-${colorIndex}">
+                    ${user.UserName ? user.UserName.substring(0, 2).toUpperCase() : '?'}
+                </div>
+                <div class="add-member-user-info">
+                    <div class="add-member-user-name">${user.UserName || 'Unknown User'}</div>
+                    <div class="add-member-user-email">${user.Email || 'No email'}</div>
+                </div>
+                <div class="add-member-checkbox"></div>
+            `;
+
+            userItem.onclick = () => toggleUserMembership(user.Id, user.UserName, userItem, isCurrentMember);
+
+            usersList.appendChild(userItem);
+        });
+    }
+
+    async function toggleUserMembership(userId, userName, userItem, isCurrentlyMember) {
+        const projectId = "@Model?.project?.Id";
+
+        try {
+            userItem.style.opacity = '0.6';
+            userItem.style.cursor = 'wait';
+
+            if (isCurrentlyMember) {
+                await removeUserFromProject(projectId, userId);
+                membershipChanges.set(userId, false);
+            } else {
+                await addUserToProject(projectId, userId);
+                membershipChanges.set(userId, true);
+            }
+
+            userItem.classList.toggle('selected');
+
+            if (isCurrentlyMember) {
+                removeUserFromNavbar(userId);
+            } else {
+                addUserToNavbar(userId, userName);
+            }
+
+            userItem.style.opacity = '1';
+            userItem.style.cursor = 'pointer';
+
+            const newIsMember = !isCurrentlyMember;
+            userItem.onclick = () => toggleUserMembership(userId, userName, userItem, newIsMember);
+
+        } catch (error) {
+            console.error('Error toggling user membership:', error);
+            alert(`Failed to ${isCurrentlyMember ? 'remove' : 'add'} member. Please try again.`);
+            userItem.style.opacity = '1';
+            userItem.style.cursor = 'pointer';
+        }
+    }
+
+
+    async function addUserToProject(projectId, userId) {
+        const formData = new FormData();
+        formData.append('projectId', projectId);
+        formData.append('userId', userId);
+
+        const response = await fetch('/Project/AddProjectMember', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const responseText = await response.text();
+        console.log('Raw response:', responseText);
+
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Failed to parse JSON:', parseError);
+            throw new Error('Server returned invalid response');
+        }
+
+        console.log('Add Project Member Response:', data);
+
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to add user to project');
+        }
+
+        return data;
+    }
+
+    async function removeUserFromProject(projectId, userId) {
+        const formData = new FormData();
+        formData.append('projectId', projectId);
+        formData.append('userId', userId);
+
+        const response = await fetch('/Project/RemoveProjectMember', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const responseText = await response.text();
+        console.log('Raw response:', responseText);
+
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Failed to parse JSON:', parseError);
+            throw new Error('Server returned invalid response');
+        }
+
+        console.log('Remove Project Member Response:', data);
+
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to remove user from project');
+        }
+
+        return data;
+    }
+
+    function filterAddMemberUsers() {
+        const searchTerm = document.getElementById('addMemberSearch').value.toLowerCase();
+        const userItems = document.querySelectorAll('#addMemberUsersList .add-member-user-item');
+
+        userItems.forEach(item => {
+            const userName = item.querySelector('.add-member-user-name').textContent.toLowerCase();
+            const userEmail = item.querySelector('.add-member-user-email').textContent.toLowerCase();
+
+            if (userName.includes(searchTerm) || userEmail.includes(searchTerm)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            const addMemberModal = document.getElementById('addMemberModal');
+            if (addMemberModal.classList.contains('active')) {
+                closeAddMemberModal();
+            }
+        }
+    });
+
+    function addUserToNavbar(userId, userName) {
+        const navbarRight = document.querySelector('.navbar-right');
+
+        const userAvatars = navbarRight.querySelectorAll('.user-avatar');
+        const colorIndex = (userAvatars.length % 6) + 1;
+
+        const initials = getUserInitials(userName);
+
+        const newAvatar = document.createElement('div');
+        newAvatar.className = `user-avatar avatar-color-${colorIndex}`;
+        newAvatar.title = userName;
+        newAvatar.textContent = initials;
+        newAvatar.setAttribute('data-user-id', userId);
+
+        const dropdown = navbarRight.querySelector('.dropdown');
+        navbarRight.insertBefore(newAvatar, dropdown);
+    }
+
+    function removeUserFromNavbar(userId) {
+        const navbarRight = document.querySelector('.navbar-right');
+
+        // Find the avatar with matching user ID
+        const avatarToRemove = navbarRight.querySelector(`.user-avatar[data-user-id="${userId}"]`);
+        if (avatarToRemove) {
+            avatarToRemove.remove();
+        }
+    }
+
+    function getUserInitials(userName) {
+        if (!userName) return '?';
+
+        const nameParts = userName.trim().split(' ');
+        if (nameParts.length >= 2) {
+            return (nameParts[0][0] + nameParts[1][0]).toUpperCase();
+        } else if (userName.length >= 2) {
+            return userName.substring(0, 2).toUpperCase();
+        } else {
+            return userName.toUpperCase();
+        }
+    }
+
+    async function refreshNavbarUsers() {
+        const projectId = "@Model?.project?.Id";
+
+        try {
+            const response = await fetch(`/Project/GetProjectUsers?projectId=${projectId}`);
+            const users = await response.json();
+
+            updateNavbarUsers(users);
+        } catch (error) {
+            console.error('Error refreshing navbar users:', error);
+        }
+    }
+
+    function updateNavbarUsers(users) {
+        const navbarRight = document.querySelector('.navbar-right');
+
+        const existingAvatars = navbarRight.querySelectorAll('.user-avatar');
+        existingAvatars.forEach(avatar => avatar.remove());
+
+        let colorIndex = 1;
+        users.forEach(user => {
+            const initials = user.UserName ? (user.UserName.length >= 2 ? user.UserName.substring(0, 2).toUpperCase() : user.UserName.toUpperCase()) : '?';
+
+            const avatar = document.createElement('div');
+            avatar.className = `user-avatar avatar-color-${colorIndex}`;
+            avatar.title = user.UserName;
+            avatar.textContent = initials;
+
+            const dropdown = navbarRight.querySelector('.dropdown');
+            navbarRight.insertBefore(avatar, dropdown);
+
+            colorIndex = colorIndex >= 6 ? 1 : colorIndex + 1;
+        });
+    }
+
+    // ========== Delete Project ==========
+    function openDeleteProjectModal() {
+        const modal = document.getElementById('deleteProjectModal');
+
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDeleteProjectModal() {
+        const modal = document.getElementById('deleteProjectModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    async function deleteProject() {
+        const projectId = "@Model?.project?.Id";
+        const confirmBtn = document.getElementById('deleteProjectConfirmBtn');
+
+        try {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Deleting...';
+
+            const response = await fetch('/Project/DeleteProject', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(projectId)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                window.location.href = '/Project/Index';
+            } else {
+                alert('Failed to delete project: ' + (data.message || 'Unknown error'));
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Delete Project';
+            }
+        } catch (error) {
+            console.error('Error deleting project:', error);
+            alert('Error deleting project. Please try again.');
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Delete Project';
+        }
+    }
+
+    // Close delete project modal on Escape key
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            const deleteProjectModal = document.getElementById('deleteProjectModal');
+            if (deleteProjectModal.classList.contains('active')) {
+                closeDeleteProjectModal();
             }
         }
     });
