@@ -863,24 +863,30 @@ public class ProjectController : Controller
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var getApiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/ProjectUser?ProjectId={projectId}&UserId={userId}";
+            var getApiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/ProjectUser?ProjectId={projectId}";
             var getResponse = await client.GetAsync(getApiUrl);
 
             if (!getResponse.IsSuccessStatusCode)
             {
-                return Json(new { success = false, message = "Failed to find project member" });
+                return Json(new { success = false, message = "Failed to find project members" });
             }
 
             var projectUserData = await getResponse.Content.ReadFromJsonAsync<GetAllProjectUsersResponse>();
 
             if (projectUserData?.projectUsers == null || projectUserData.projectUsers.Count == 0)
             {
-                return Json(new { success = false, message = "Project member not found" });
+                return Json(new { success = false, message = "No project members found" });
             }
 
-            var projectUserId = projectUserData.projectUsers[0].Id;
+            var projectUser = projectUserData.projectUsers
+                .FirstOrDefault(pu => pu.UserId == userId);
 
-            var deleteApiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/ProjectUser/{projectUserId}";
+            if (projectUser == null)
+            {
+                return Json(new { success = false, message = "User is not a member of this project" });
+            }
+
+            var deleteApiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/ProjectUser/{projectUser.Id}";
             var deleteResponse = await client.DeleteAsync(deleteApiUrl);
 
             if (deleteResponse.IsSuccessStatusCode)
