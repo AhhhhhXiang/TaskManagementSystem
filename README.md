@@ -20,3 +20,9 @@ Update-Database -Project TaskManagement.Data.Migrations -StartupProject TaskMana
 ## Run the Application
 
 Set `TaskManagementAPI` & `TaskManagementSystem` as startup projects
+
+### Default Admin Account
+
+Username: `Admin`
+
+Password: `Admin@123`
