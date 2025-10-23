@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using TaskManagement.Data.Migrations.Models;
 using TaskManagementAPI.Models.Project;
+using TaskManagementAPI.Models.ProjectUser;
 using TaskManagementSystem.Models.ViewModels;
 
 public class ProjectController : Controller
@@ -798,6 +799,139 @@ public class ProjectController : Controller
                 success = false,
                 message = $"An error occurred: {ex.Message}"
             });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AddProjectMember(Guid projectId, Guid userId)
+    {
+        try
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Json(new { success = false, message = "User not found" });
+
+            if (!await _userManager.IsInRoleAsync(user, "Administrator"))
+                return Json(new { success = false, message = "Only administrators can add members" });
+
+            var token = await GenerateJwtToken(user);
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/ProjectUser";
+            var createRequest = new
+            {
+                ProjectId = projectId.ToString(),
+                UserId = userId.ToString()
+            };
+
+            var jsonContent = JsonSerializer.Serialize(createRequest);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync(apiUrl, content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return Json(new { success = true, message = "Member added to project successfully" });
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                return Json(new { success = false, message = "Failed to add member: " + errorContent });
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in AddProjectMember: {ex}");
+            return Json(new { success = false, message = "Internal server error: " + ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RemoveProjectMember(Guid projectId, Guid userId)
+    {
+        try
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Json(new { success = false, message = "User not found" });
+
+            if (!await _userManager.IsInRoleAsync(user, "Administrator"))
+                return Json(new { success = false, message = "Only administrators can remove members" });
+
+            var token = await GenerateJwtToken(user);
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var getApiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/ProjectUser?ProjectId={projectId}&UserId={userId}";
+            var getResponse = await client.GetAsync(getApiUrl);
+
+            if (!getResponse.IsSuccessStatusCode)
+            {
+                return Json(new { success = false, message = "Failed to find project member" });
+            }
+
+            var projectUserData = await getResponse.Content.ReadFromJsonAsync<GetAllProjectUsersResponse>();
+
+            if (projectUserData?.projectUsers == null || projectUserData.projectUsers.Count == 0)
+            {
+                return Json(new { success = false, message = "Project member not found" });
+            }
+
+            var projectUserId = projectUserData.projectUsers[0].Id;
+
+            var deleteApiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/ProjectUser/{projectUserId}";
+            var deleteResponse = await client.DeleteAsync(deleteApiUrl);
+
+            if (deleteResponse.IsSuccessStatusCode)
+            {
+                return Json(new { success = true, message = "Member removed from project successfully" });
+            }
+            else
+            {
+                var errorContent = await deleteResponse.Content.ReadAsStringAsync();
+                return Json(new { success = false, message = "Failed to remove member: " + errorContent });
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in RemoveProjectMember: {ex}");
+            return Json(new { success = false, message = "Internal server error: " + ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteProject([FromBody] string projectId)
+    {
+        try
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Json(new { success = false, message = "User not found" });
+
+            if (!await _userManager.IsInRoleAsync(user, "Administrator"))
+                return Json(new { success = false, message = "Only administrators can delete projects" });
+
+            var token = await GenerateJwtToken(user);
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/Project/{projectId}";
+            var response = await client.DeleteAsync(apiUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return Json(new { success = true, message = "Project deleted successfully" });
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                return Json(new { success = false, message = "Failed to delete project: " + errorContent });
+            }
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
         }
     }
 }
