@@ -282,10 +282,40 @@ namespace TaskManagementAPI.Controllers.TaskAttachment
                     return new JsonResult(new { success = false, message = "Access denied. You are not part of this project." });
             }
 
-            _client.TaskAttachmentRepository.Delete(attachment.Id);
-            _client.TaskAttachmentRepository.Save();
+            try
+            {
+                if (!string.IsNullOrEmpty(attachment.FilePath))
+                {
+                    var relativePath = attachment.FilePath.TrimStart('\\', '/');
+                    var basePath = _configuration.GetSection("AttachmentPath:get").Value;
+                    var folder = _configuration.GetSection("AttachmentPath:getAttachmentFolder").Value;
+                    var fullPath = Path.Combine(basePath, folder, relativePath);
 
-            return new JsonResult(new { success = true, message = "Attachment deleted successfully." });
+                    bool fileDeleted = _client.TaskAttachmentRepository.DeleteImage(fullPath);
+
+                    if (!fileDeleted)
+                    {
+                        Console.WriteLine($"Warning: File deletion failed for {fullPath}");
+                    }
+                }
+
+                _client.TaskAttachmentRepository.Delete(attachment.Id);
+                _client.TaskAttachmentRepository.Save();
+
+                return new JsonResult(new
+                {
+                    success = true,
+                    message = "Attachment deleted successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = "An error occurred while deleting the attachment."
+                });
+            }
         }
     }
 }

@@ -7,6 +7,7 @@ using TaskManagementAPI.Models.ProjectTask;
 using TaskManagement.Data.Migrations.Models;
 using TaskManagement.Core.Repository.Models;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Configuration;
 
 namespace TaskManagementAPI.Controllers.ProjectTask
 {
@@ -16,11 +17,13 @@ namespace TaskManagementAPI.Controllers.ProjectTask
     {
         private readonly ITaskManagementClient _client;
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly IConfiguration _configuration;
 
-        public ProjectTaskController(ITaskManagementClient client, UserManager<IdentityUser> userManager)
+        public ProjectTaskController(ITaskManagementClient client, UserManager<IdentityUser> userManager, IConfiguration configuration)
         {
             _client = client;
             _userManager = userManager;
+            _configuration = configuration;
         }
 
         [HttpGet]
@@ -271,10 +274,72 @@ namespace TaskManagementAPI.Controllers.ProjectTask
                     return new JsonResult(new { success = false, message = "Access denied. You are not part of this project." });
             }
 
-            _client.ProjectTaskRepository.Delete(existingTask.Id);
-            _client.ProjectTaskRepository.Save();
+            try
+            {
+                var taskAttachments = _client.TaskAttachmentRepository
+                    .GetAll()
+                    .Where(ta => ta.TaskId == id)
+                    .ToList();
 
-            return new JsonResult(new { success = true, message = "Project task deleted successfully." });
+                foreach (var attachment in taskAttachments)
+                {
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(attachment.FilePath))
+                        {
+                            var relativePath = attachment.FilePath.TrimStart('\\', '/');
+                            var basePath = _configuration.GetSection("AttachmentPath:get").Value;
+                            var folder = _configuration.GetSection("AttachmentPath:getAttachmentFolder").Value;
+                            var fullPath = Path.Combine(basePath, folder, relativePath);
+
+                            bool fileDeleted = _client.TaskAttachmentRepository.DeleteImage(fullPath);
+
+                            if (!fileDeleted)
+                            {
+                                Console.WriteLine($"Warning: File deletion failed for {fullPath}");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error deleting file for attachment {attachment.Id}: {ex.Message}");
+                    }
+                }
+
+                var taskUsers = _client.TaskUserRepository
+                    .GetAll()
+                    .Where(tu => tu.TaskId == id)
+                    .ToList();
+
+                foreach (var taskUser in taskUsers)
+                {
+                    _client.TaskUserRepository.Delete(taskUser.Id);
+                }
+                _client.TaskUserRepository.Save();
+
+                foreach (var attachment in taskAttachments)
+                {
+                    _client.TaskAttachmentRepository.Delete(attachment.Id);
+                }
+                _client.TaskAttachmentRepository.Save();
+
+                _client.ProjectTaskRepository.Delete(existingTask.Id);
+                _client.ProjectTaskRepository.Save();
+
+                return new JsonResult(new
+                {
+                    success = true,
+                    message = "Project task and all related data deleted successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = "An error occurred while deleting the project task."
+                });
+            }
         }
     }
 }

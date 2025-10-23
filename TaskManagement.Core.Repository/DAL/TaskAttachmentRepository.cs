@@ -59,6 +59,19 @@ namespace TaskManagement.Core.Repository.DAL
             }
         }
 
+        public bool DeleteImage(string path)
+        {
+            if (System.IO.File.Exists(path))
+            {
+                System.IO.File.Delete(path);
+            }
+            if (System.IO.File.Exists(path))
+            {
+                return false;
+            }
+            return true;
+        }
+
         public void Save()
         {
             _context.SaveChanges();
