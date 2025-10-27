@@ -7,5 +7,6 @@ namespace TaskManagementSystem.Models.ViewModels
     {
         public ProjectsResponse project { get; set; }
         public List<UserReturnModel> users { get; set; }
+        public Guid currentUserId { get; set; }
     }
 }
