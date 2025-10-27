@@ -109,7 +109,9 @@ namespace TaskManagementAPI.Controllers.ProjectTask
                     Description = t.Description,
                     StartDate = t.StartDate,
                     DueDate = t.DueDate,
-                    ProgressStatus = t.ProgressStatus
+                    ProgressStatus = t.ProgressStatus,
+                    PriorityStatus = t.priorityStatus,
+                    CreatedBy = t.CreatedBy
                 })
                 .ToList();
 
@@ -152,7 +154,9 @@ namespace TaskManagementAPI.Controllers.ProjectTask
                 Description = task.Description,
                 StartDate = task.StartDate,
                 DueDate = task.DueDate,
-                ProgressStatus = task.ProgressStatus
+                ProgressStatus = task.ProgressStatus,
+                PriorityStatus = task.priorityStatus,
+                CreatedBy = task.CreatedBy
             });
         }
 
@@ -184,9 +188,10 @@ namespace TaskManagementAPI.Controllers.ProjectTask
                 StartDate = form.StartDate,
                 DueDate = form.DueDate,
                 ProgressStatus = form.ProgressStatus,
+                priorityStatus = form.PriorityStatus,
                 status = 1,
                 CreatedBy = userId,
-                CreatedDateTime = DateTime.UtcNow
+                CreatedDateTime = DateTime.UtcNow.ToLocalTime()
             };
 
             _client.ProjectTaskRepository.Add(newTask);
@@ -224,8 +229,9 @@ namespace TaskManagementAPI.Controllers.ProjectTask
             existingTask.StartDate = form.StartDate ?? existingTask.StartDate;
             existingTask.DueDate = form.DueDate ?? existingTask.DueDate;
             existingTask.ProgressStatus = form.ProgressStatus ?? existingTask.ProgressStatus;
+            existingTask.priorityStatus = form.PriorityStatus ?? existingTask.priorityStatus;
             existingTask.UpdatedBy = userId;
-            existingTask.UpdatedDateTime = DateTime.UtcNow;
+            existingTask.UpdatedDateTime = DateTime.UtcNow.ToLocalTime();
 
             _client.ProjectTaskRepository.Update(existingTask);
             _client.ProjectTaskRepository.Save();
@@ -241,6 +247,7 @@ namespace TaskManagementAPI.Controllers.ProjectTask
                     StartDate = existingTask.StartDate,
                     DueDate = existingTask.DueDate,
                     ProgressStatus = existingTask.ProgressStatus,
+                    PriorityStatus = existingTask.priorityStatus,
                     status = existingTask.status,
                     CreatedBy = existingTask.CreatedBy,
                     CreatedDateTime = existingTask.CreatedDateTime,

@@ -19,6 +19,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddScoped<IProjectUserRepository, ProjectUserRepository>();
             services.AddScoped<ITaskAttachmentRepository, TaskAttachmentRepository>();
             services.AddScoped<ITaskUserRepository, TaskUserRepository>();
+            services.AddScoped<ITaskCommentRepository, TaskCommentRepository>();
             services.AddScoped<ITaskManagementClient, TaskManagementClient>();
 
             return services;

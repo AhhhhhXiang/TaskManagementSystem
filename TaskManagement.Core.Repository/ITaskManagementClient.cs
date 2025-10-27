@@ -7,5 +7,6 @@
         IProjectUserRepository ProjectUserRepository { get; }
         ITaskAttachmentRepository TaskAttachmentRepository { get; }
         ITaskUserRepository TaskUserRepository { get; }
+        ITaskCommentRepository TaskCommentRepository { get; }
     }
 }

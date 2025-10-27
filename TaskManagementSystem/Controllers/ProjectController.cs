@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TaskManagement.Data.Migrations.Models;
 using TaskManagementAPI.Models.Project;
@@ -22,7 +23,7 @@ public class ProjectController : Controller
         _configuration = configuration;
     }
 
-    public async Task<IActionResult> Index(int page = 1)
+    public async Task<IActionResult> Index(int page = 1, string projectName = "", string memberName = "", string priority = "")
     {
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Challenge();
@@ -32,7 +33,15 @@ public class ProjectController : Controller
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/Project?page={page}&pageSize=15";
+        // Build URL with all filter parameters
+        var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/Project?page={page}&pageSize=14&modules=ProjectUser&modules=Tasks&modules=TaskUser";
+
+        if (!string.IsNullOrEmpty(projectName))
+            apiUrl += $"&projectName={Uri.EscapeDataString(projectName)}";
+        if (!string.IsNullOrEmpty(memberName))
+            apiUrl += $"&memberName={Uri.EscapeDataString(memberName)}";
+        if (!string.IsNullOrEmpty(priority))
+            apiUrl += $"&priority={Uri.EscapeDataString(priority)}";
 
         var response = await client.GetAsync(apiUrl);
         if (!response.IsSuccessStatusCode)
@@ -135,7 +144,7 @@ public class ProjectController : Controller
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/Project/{id}?modules=ProjectUser&modules=Tasks&modules=TaskAttachment&modules=TaskUser";
+        var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/Project/{id}?modules=ProjectUser&modules=Tasks&modules=TaskAttachment&modules=TaskUser&modules=TaskComment";
         var response = await client.GetAsync(apiUrl);
 
         if (!response.IsSuccessStatusCode)
@@ -164,7 +173,8 @@ public class ProjectController : Controller
         var viewModel = new ProjectDetailsViewModel
         {
             project = project,
-            users = users
+            users = users,
+            currentUserId = Guid.Parse(user.Id)
         };
 
         return View(viewModel);
@@ -207,7 +217,15 @@ public class ProjectController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateTask(string title, int progressStatus, string projectId)
+    public async Task<IActionResult> CreateTask(
+        [FromForm] string title,
+        [FromForm] string description,
+        [FromForm] string dueDate,
+        [FromForm] string priorityStatus,
+        [FromForm] int progressStatus,
+        [FromForm] string projectId,
+        [FromForm] List<string> assigneeIds = null,
+        [FromForm] List<IFormFile> attachments = null)
     {
         try
         {
@@ -218,11 +236,8 @@ public class ProjectController : Controller
             if (string.IsNullOrWhiteSpace(title))
                 return Json(new { success = false, message = "Task title is required." });
 
-            if (string.IsNullOrWhiteSpace(projectId))
-                return Json(new { success = false, message = "Project ID is required." });
-
-            if (!Guid.TryParse(projectId, out Guid projectGuid))
-                return Json(new { success = false, message = "Invalid Project ID format." });
+            if (string.IsNullOrWhiteSpace(projectId) || !Guid.TryParse(projectId, out Guid projectGuid))
+                return Json(new { success = false, message = "Valid Project ID is required." });
 
             var token = await GenerateJwtToken(user);
 
@@ -231,68 +246,185 @@ public class ProjectController : Controller
 
             var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/ProjectTask";
 
-            var payload = new
+            // Parse inputs
+            DateTime? parsedDueDate = null;
+            if (!string.IsNullOrEmpty(dueDate) && DateTime.TryParse(dueDate, out DateTime tempDueDate))
             {
-                Title = title,
+                parsedDueDate = tempDueDate;
+            }
+
+            if (!int.TryParse(priorityStatus, out int priority) || priority < 1 || priority > 3)
+            {
+                priority = 1; // Default to Low priority
+            }
+
+            // Create the task first
+            var taskPayload = new
+            {
+                Title = title.Trim(),
+                Description = description?.Trim(),
                 ProgressStatus = progressStatus,
-                ProjectId = projectGuid
+                ProjectId = projectGuid,
+                DueDate = parsedDueDate,
+                PriorityStatus = priority,
+                CreatedBy = Guid.Parse(user.Id)
             };
 
-            var response = await client.PostAsJsonAsync(apiUrl, payload);
+            var taskResponse = await client.PostAsJsonAsync(apiUrl, taskPayload);
 
-            if (!response.IsSuccessStatusCode)
+            if (!taskResponse.IsSuccessStatusCode)
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                return Json(new
-                {
-                    success = false,
-                    message = $"Failed to create task. API returned: {response.StatusCode}"
-                });
+                var errorText = await taskResponse.Content.ReadAsStringAsync();
+                return Json(new { success = false, message = $"Failed to create task: {errorText}" });
             }
 
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var resultJson = System.Text.Json.JsonDocument.Parse(responseContent);
+            var taskResponseContent = await taskResponse.Content.ReadAsStringAsync();
+            var taskResultJson = System.Text.Json.JsonDocument.Parse(taskResponseContent);
 
-            if (resultJson.RootElement.TryGetProperty("projectTask", out var taskElement))
+            if (!taskResultJson.RootElement.TryGetProperty("projectTask", out var taskElement))
             {
-                var taskData = new
-                {
-                    Id = taskElement.GetProperty("id").GetGuid(),
-                    Title = taskElement.GetProperty("title").GetString(),
-                    Description = taskElement.TryGetProperty("description", out var desc) ? desc.GetString() : "",
-                    ProjectId = taskElement.GetProperty("projectId").GetGuid(),
-                    ProgressStatus = taskElement.GetProperty("progressStatus").GetInt32(),
-                    StartDate = taskElement.TryGetProperty("startDate", out var startDate) && startDate.ValueKind != System.Text.Json.JsonValueKind.Null
-                        ? startDate.GetDateTime()
-                        : (DateTime?)null,
-                    DueDate = taskElement.TryGetProperty("dueDate", out var dueDate) && dueDate.ValueKind != System.Text.Json.JsonValueKind.Null
-                        ? dueDate.GetDateTime()
-                        : (DateTime?)null
-                };
+                return Json(new { success = false, message = "Invalid response from task creation API." });
+            }
 
-                return Json(new
-                {
-                    success = true,
-                    message = "Task created successfully!",
-                    task = taskData
-                });
-            }
-            else
+            var taskId = taskElement.GetProperty("id").GetGuid();
+            var createdTask = new
             {
-                return Json(new
+                Id = taskId,
+                Title = taskElement.GetProperty("title").GetString(),
+                Description = taskElement.TryGetProperty("description", out var desc) ? desc.GetString() : description,
+                ProjectId = projectGuid,
+                ProgressStatus = progressStatus,
+                PriorityStatus = priority,
+                DueDate = parsedDueDate,
+                CreatedDateTime = DateTime.UtcNow,
+                CreatedBy = Guid.Parse(user.Id)
+            };
+
+            // Add members to the task
+            if (assigneeIds != null && assigneeIds.Count > 0)
+            {
+                foreach (var assigneeId in assigneeIds)
                 {
-                    success = true,
-                    message = "Task created successfully!"
-                });
+                    if (Guid.TryParse(assigneeId, out Guid userId))
+                    {
+                        try
+                        {
+                            var memberApiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/TaskUser";
+                            var memberPayload = new { TaskId = taskId.ToString(), UserId = assigneeId };
+                            var memberResponse = await client.PostAsJsonAsync(memberApiUrl, memberPayload);
+
+                            if (!memberResponse.IsSuccessStatusCode)
+                            {
+                                var errorText = await memberResponse.Content.ReadAsStringAsync();
+                                Console.WriteLine($"Failed to add member {assigneeId} to task: {errorText}");
+                            }
+                            else
+                            {
+                                var memberResponseContent = await memberResponse.Content.ReadAsStringAsync();
+                                var memberResultJson = System.Text.Json.JsonDocument.Parse(memberResponseContent);
+
+                                if (memberResultJson.RootElement.TryGetProperty("success", out var successElement) && !successElement.GetBoolean())
+                                {
+                                    var message = memberResultJson.RootElement.TryGetProperty("message", out var messageElement)
+                                        ? messageElement.GetString()
+                                        : "Unknown error";
+                                    Console.WriteLine($"Failed to add member {assigneeId} to task: {message}");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Successfully added member {assigneeId} to task");
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error adding member {assigneeId} to task: {ex.Message}");
+                        }
+                    }
+                }
             }
+
+            // Upload and add attachments
+            var uploadedAttachments = new List<object>();
+            if (attachments != null && attachments.Count > 0)
+            {
+                foreach (var file in attachments)
+                {
+                    if (file.Length > 0)
+                    {
+                        try
+                        {
+                            // Upload file
+                            var uploadFormData = new MultipartFormDataContent();
+                            var fileContent = new StreamContent(file.OpenReadStream());
+                            fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+                            uploadFormData.Add(fileContent, "file", file.FileName);
+
+                            var uploadApiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/Attachment/Upload";
+                            var uploadResponse = await client.PostAsync(uploadApiUrl, uploadFormData);
+
+                            if (!uploadResponse.IsSuccessStatusCode)
+                            {
+                                Console.WriteLine($"Upload failed for {file.FileName}: {uploadResponse.StatusCode}");
+                                continue;
+                            }
+
+                            var uploadResult = await uploadResponse.Content.ReadFromJsonAsync<JsonElement>();
+                            if (!uploadResult.TryGetProperty("success", out var successProp) || !successProp.GetBoolean())
+                            {
+                                var message = uploadResult.TryGetProperty("message", out var msgProp)
+                                    ? msgProp.GetString()
+                                    : "Upload failed";
+                                Console.WriteLine($"Upload failed for {file.FileName}: {message}");
+                                continue;
+                            }
+
+                            var fileName = uploadResult.GetProperty("fileName").GetString();
+                            var path = uploadResult.GetProperty("path").GetString();
+
+                            var attachmentPayload = new
+                            {
+                                TaskId = taskId.ToString(),
+                                FileName = fileName,
+                                FilePath = path
+                            };
+
+                            var attachmentApiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/TaskAttachment";
+                            var attachmentResponse = await client.PostAsJsonAsync(attachmentApiUrl, attachmentPayload);
+
+                            if (!attachmentResponse.IsSuccessStatusCode)
+                            {
+                                Console.WriteLine($"Failed to create attachment record for {file.FileName}");
+                                continue;
+                            }
+
+                            uploadedAttachments.Add(new
+                            {
+                                fileName = fileName,
+                                path = path,
+                                originalName = file.FileName,
+                                size = file.Length
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error processing attachment {file.FileName}: {ex.Message}");
+                        }
+                    }
+                }
+            }
+
+            return Json(new
+            {
+                success = true,
+                message = "Task created successfully!",
+                task = createdTask,
+                attachments = uploadedAttachments
+            });
         }
         catch (Exception ex)
         {
-            return Json(new
-            {
-                success = false,
-                message = $"An error occurred: {ex.Message}"
-            });
+            return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
         }
     }
 
@@ -938,6 +1070,248 @@ public class ProjectController : Controller
         catch (Exception ex)
         {
             return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateTaskPriority(string taskId, int priorityStatus)
+    {
+        try
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Json(new { success = false, message = "User not found." });
+
+            if (string.IsNullOrWhiteSpace(taskId))
+                return Json(new { success = false, message = "Task ID is required." });
+
+            var token = await GenerateJwtToken(user);
+
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/ProjectTask/{taskId}";
+
+            var payload = new { PriorityStatus = priorityStatus };
+
+            var patchMethod = new HttpMethod("PATCH");
+            var request = new HttpRequestMessage(patchMethod, apiUrl)
+            {
+                Content = JsonContent.Create(payload)
+            };
+
+            var response = await client.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                return Json(new { success = false, message = $"API error: {errorText}" });
+            }
+
+            return Json(new { success = true, message = "Task Priority Status changed." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
+        }
+    }    
+    
+    [HttpPost]
+    public async Task<IActionResult> UpdateTaskDueDate(string taskId, string dueDate)
+    {
+        try
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Json(new { success = false, message = "User not found." });
+
+            if (string.IsNullOrWhiteSpace(taskId))
+                return Json(new { success = false, message = "Task ID is required." });
+
+            var token = await GenerateJwtToken(user);
+
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/ProjectTask/{taskId}";
+
+            var payload = new { DueDate = dueDate };
+
+            var patchMethod = new HttpMethod("PATCH");
+            var request = new HttpRequestMessage(patchMethod, apiUrl)
+            {
+                Content = JsonContent.Create(payload)
+            };
+
+            var response = await client.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                return Json(new { success = false, message = $"API error: {errorText}" });
+            }
+
+            return Json(new { success = true, message = "Task Due Date changed." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateTaskComment([FromForm] string taskId, [FromForm] string comment)
+    {
+        try
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Json(new { success = false, message = "User not found." });
+
+            if (string.IsNullOrWhiteSpace(taskId) || string.IsNullOrWhiteSpace(comment))
+                return Json(new { success = false, message = "Task ID and Comment are required." });
+
+            var token = await GenerateJwtToken(user);
+
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/TaskComment";
+
+            var payload = new
+            {
+                TaskId = taskId,
+                UserId = user.Id,
+                Comment = comment
+            };
+
+            var response = await client.PostAsJsonAsync(apiUrl, payload);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                return Json(new { success = false, message = $"API error: {errorText}" });
+            }
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                var result = JsonSerializer.Deserialize<JsonElement>(responseContent);
+
+                if (result.ValueKind == JsonValueKind.Object && result.TryGetProperty("taskComment", out var taskCommentElement))
+                {
+                    var commentData = new
+                    {
+                        Id = taskCommentElement.TryGetProperty("id", out var idElement) ? idElement.GetInt64() : 0,
+                        TaskId = taskCommentElement.TryGetProperty("taskId", out var taskIdElement) ? taskIdElement.GetGuid() : Guid.Parse(taskId),
+                        UserId = Guid.Parse(user.Id),
+                        Username = user.UserName ?? "Unknown User",
+                        Comment = taskCommentElement.TryGetProperty("comment", out var commentTextElement) ? commentTextElement.GetString() : comment,
+                        CreatedDateTime = taskCommentElement.TryGetProperty("createdDateTime", out var dateElement) ? dateElement.GetDateTime() : DateTime.UtcNow
+                    };
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = "Comment added successfully",
+                        comment = commentData
+                    });
+                }
+                else
+                {
+                    var commentData = new
+                    {
+                        Id = result.TryGetProperty("id", out var idElement) ? idElement.GetInt64() : 0,
+                        TaskId = Guid.Parse(taskId),
+                        UserId = Guid.Parse(user.Id),
+                        Username = user.UserName ?? "Unknown User",
+                        Comment = result.TryGetProperty("comment", out var commentTextElement) ? commentTextElement.GetString() : comment,
+                        CreatedDateTime = result.TryGetProperty("createdDateTime", out var dateElement) ? dateElement.GetDateTime() : DateTime.UtcNow
+                    };
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = "Comment added successfully",
+                        comment = commentData
+                    });
+                }
+            }
+            catch (JsonException jsonEx)
+            {
+                var commentData = new
+                {
+                    Id = 0,
+                    TaskId = Guid.Parse(taskId),
+                    UserId = Guid.Parse(user.Id),
+                    Username = user.UserName ?? "Unknown User",
+                    Comment = comment,
+                    CreatedDateTime = DateTime.UtcNow
+                };
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Comment added successfully",
+                    comment = commentData
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception in CreateTaskComment: {ex}");
+            return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
+        }
+    }
+
+    [HttpDelete]
+    public async Task<IActionResult> RemoveTaskComment([FromQuery] int commentId)
+    {
+        try
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Json(new { success = false, message = "User not found." });
+
+            if (commentId <= 0)
+                return Json(new { success = false, message = "Comment ID is required." });
+
+            var token = await GenerateJwtToken(user);
+
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/TaskComment/{commentId}";
+
+            var response = await client.DeleteAsync(apiUrl);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                return Json(new { success = false, message = $"API error: {errorText}" });
+            }
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<JsonElement>(responseContent);
+
+            // Check if the API call was successful
+            if (result.TryGetProperty("success", out var successProperty) &&
+                successProperty.GetBoolean())
+            {
+                return Json(new { success = true, message = "Comment deleted successfully." });
+            }
+            else
+            {
+                var message = result.TryGetProperty("message", out var messageProperty)
+                    ? messageProperty.GetString()
+                    : "Failed to delete comment";
+                return Json(new { success = false, message });
+            }
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
         }
     }
 }

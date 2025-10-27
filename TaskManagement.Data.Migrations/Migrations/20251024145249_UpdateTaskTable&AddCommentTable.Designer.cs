@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TaskManagement.Data.Migrations.Data;
 
@@ -11,9 +12,10 @@ using TaskManagement.Data.Migrations.Data;
 namespace TaskManagement.Data.Migrations.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251024145249_UpdateTaskTable&AddCommentTable")]
+    partial class UpdateTaskTableAddCommentTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -52,14 +54,14 @@ namespace TaskManagement.Data.Migrations.Migrations
                         new
                         {
                             Id = "1",
-                            ConcurrencyStamp = "edad510f-2d09-41a7-83a5-702d48797c3a",
+                            ConcurrencyStamp = "51a74591-460f-4ada-b186-9db4afaadea2",
                             Name = "Administrator",
                             NormalizedName = "ADMINISTRATOR"
                         },
                         new
                         {
                             Id = "2",
-                            ConcurrencyStamp = "4d032b23-b166-4a9e-afff-a60db0b61e99",
+                            ConcurrencyStamp = "258307fa-d5c7-498e-96b1-906099490b54",
                             Name = "RegisterUser",
                             NormalizedName = "REGISTERUSER"
                         });
@@ -157,17 +159,17 @@ namespace TaskManagement.Data.Migrations.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "24a6d05b-fdfa-4776-89d0-7cf3d97da233",
+                            Id = "1a18d59c-c77d-42a0-ad9f-bde332c45aff",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "f8b8bcaa-ef34-4eab-b882-6d7775f303b6",
+                            ConcurrencyStamp = "d6b68fcd-e096-4dd7-aead-f132cc627177",
                             Email = "admin@example.com",
                             EmailConfirmed = false,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@EXAMPLE.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAEAACcQAAAAEM8F1thc4VKYYym9O66RRSm4ioHHu6X5NIYMixCXYrgGBA/LtQlvpLhOOcYbwB2M+A==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEMM94sHP43W4UUi9yFC6EVb5NUX8u38avFYxE4if1DlOSaoQxQro9Hi+0PLmhjuScA==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "7e8c2bc6-c171-4e3a-9c3f-5f08898a8a4d",
+                            SecurityStamp = "05f846b2-96de-4bec-bd12-6899dd71a489",
                             TwoFactorEnabled = false,
                             UserName = "admin"
                         });
@@ -237,7 +239,7 @@ namespace TaskManagement.Data.Migrations.Migrations
                     b.HasData(
                         new
                         {
-                            UserId = "24a6d05b-fdfa-4776-89d0-7cf3d97da233",
+                            UserId = "1a18d59c-c77d-42a0-ad9f-bde332c45aff",
                             RoleId = "1"
                         });
                 });
@@ -444,51 +446,6 @@ namespace TaskManagement.Data.Migrations.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("TaskAttachment", (string)null);
-                });
-
-            modelBuilder.Entity("TaskManagement.Data.Migrations.Models.TaskComment", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"), 1L, 1);
-
-                    b.Property<string>("Comment")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("varchar(1000)");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Remarks")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("TaskId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime?>("UpdatedDateTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<byte>("status")
-                        .HasColumnType("tinyint");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("TaskComment", (string)null);
                 });
 
             modelBuilder.Entity("TaskManagement.Data.Migrations.Models.TaskUser", b =>

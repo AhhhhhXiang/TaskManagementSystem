@@ -49,10 +49,20 @@ namespace TaskManagementAPI.Controllers.TaskUser
                 query = query.Where(tu => taskIds.Contains(tu.TaskId));
             }
 
-            if (form.TaskId.HasValue)
+            if (form.TaskId.HasValue && form.UserId.HasValue)
+            {
+                query = query.Where(tu =>
+                    tu.TaskId == form.TaskId.Value &&
+                    tu.UserId == form.UserId.Value);
+            }
+            else if (form.TaskId.HasValue)
+            {
                 query = query.Where(tu => tu.TaskId == form.TaskId.Value);
+            }
             else if (form.UserId.HasValue)
+            {
                 query = query.Where(tu => tu.UserId == form.UserId.Value);
+            }
 
             var taskUsers = query.ToList();
 

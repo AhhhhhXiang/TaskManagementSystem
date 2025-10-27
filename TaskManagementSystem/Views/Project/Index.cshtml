@@ -1,4 +1,5 @@
 ﻿@using TaskManagementAPI.Models.Project
+@using TaskManagement.Data.Migrations.Models
 @model TaskManagementSystem.Models.ViewModels.PaginatedProjectsViewModel
 
 <style>
@@ -10,7 +11,6 @@
         width: 100%;
         height: 100%;
         overflow-x: hidden;
-        overflow-y: auto;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
         scroll-behavior: smooth;
     }
@@ -18,12 +18,13 @@
     .projects-container {
         padding: 16px;
         max-width: 1200px;
-        margin: 0 auto 60px auto;
+        margin: 0 auto;
         width: 100%;
         box-sizing: border-box;
         min-height: 100vh;
         display: flex;
         flex-direction: column;
+        padding-bottom: 80px;
     }
 
     .projects-header {
@@ -45,15 +46,40 @@
         flex: 1 1 auto;
     }
 
+    .filters-container {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+        align-items: center;
+    }
+
+    .filter-input {
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid #4a5568;
+        background-color: #2d3748;
+        color: #e9ecef;
+        font-size: 14px;
+        min-width: 150px;
+    }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #0079bf;
+        }
+
     .boards-container-wrapper {
         position: relative;
         width: 100%;
-        flex: 1 1 auto;
-        max-height: calc(100vh - 180px);
+        flex: 1;
         overflow-y: auto;
         overflow-x: hidden;
         padding-right: 6px;
+        margin-bottom: 20px;
         scrollbar-width: thin;
+        min-height: 0;
+        max-height: calc(100vh - 300px);
     }
 
         .boards-container-wrapper::-webkit-scrollbar {
@@ -67,18 +93,19 @@
 
     .boards-container {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
         width: 100%;
         box-sizing: border-box;
         align-content: start;
+        min-height: min-content;
     }
 
     .board-card, .create-board-card {
         border-radius: 8px;
-        padding: 12px;
+        padding: 16px;
         cursor: pointer;
-        min-height: 110px;
+        min-height: 180px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -100,9 +127,9 @@
         }
 
         .board-card h3 {
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             color: #e2e8f0;
-            font-size: 1rem;
+            font-size: 1.1rem;
         }
 
         .board-card p {
@@ -115,13 +142,124 @@
             -webkit-box-orient: vertical;
         }
 
+    .tasks-section {
+        margin: 12px 0;
+        flex-grow: 1;
+    }
+
+    .tasks-title {
+        font-size: 0.85rem;
+        color: #cbd5e0;
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+
+    .task-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .task-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 6px 0;
+        border-bottom: 1px solid #4a5568;
+        font-size: 0.8rem;
+    }
+
+        .task-item:last-child {
+            border-bottom: none;
+        }
+
+    .task-name {
+        color: #e2e8f0;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .task-details {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        margin-left: 8px;
+    }
+
+    .task-deadline {
+        font-size: 0.75rem;
+        color: #f56565;
+        white-space: nowrap;
+    }
+
+    .task-priority {
+        font-size: 0.7rem;
+        padding: 1px 4px;
+        border-radius: 3px;
+        white-space: nowrap;
+    }
+
+    .priority-high {
+        background-color: #f56565;
+        color: white;
+    }
+
+    .priority-medium {
+        background-color: #ed8936;
+        color: white;
+    }
+
+    .priority-low {
+        background-color: #48bb78;
+        color: white;
+    }
+
+    .members-section {
+        margin-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .member-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background-color: #0079bf;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        color: white;
+        font-weight: bold;
+    }
+
+    .no-tasks {
+        font-size: 0.8rem;
+        color: #718096;
+        font-style: italic;
+        text-align: center;
+        padding: 8px 0;
+    }
+
+    .no-projects-message {
+        grid-column: 1 / -1;
+        text-align: center;
+        color: #718096;
+        padding: 40px;
+        font-style: italic;
+    }
+
     .create-board-card {
         background-color: #4a5568;
         border: 2px dashed #718096;
         align-items: center;
         justify-content: center;
         transition: background-color 0.2s;
-        min-height: 110px;
+        min-height: 180px;
     }
 
         .create-board-card:hover {
@@ -144,41 +282,42 @@
     .pagination-container {
         position: sticky;
         bottom: 0;
-        left: 0;
         background-color: #1a1d23;
         display: flex;
         justify-content: center;
-        margin-top: 20px;
+        margin-top: auto;
         gap: 8px;
         flex-wrap: wrap;
-        padding: 10px 0;
+        padding: 15px 0;
         border-top: 1px solid #333;
-        z-index: 10;
+        z-index: 50;
     }
 
         .pagination-container a {
             background-color: #2d3748;
             color: #e2e8f0;
-            padding: 6px 10px;
+            padding: 8px 12px;
             border-radius: 6px;
             text-decoration: none;
             transition: background-color 0.2s, transform 0.1s;
-            font-size: 13px;
-            min-width: 36px;
+            font-size: 14px;
+            min-width: 40px;
             text-align: center;
+            border: 1px solid #4a5568;
         }
 
             .pagination-container a:hover {
                 background-color: #4a5568;
+                transform: translateY(-1px);
             }
 
             .pagination-container a.active {
                 background-color: #0079bf;
                 color: #fff;
                 transform: scale(1.05);
+                border-color: #0079bf;
             }
 
-    /* Dropdown */
     .create-project-dropdown {
         position: fixed;
         top: 50%;
@@ -250,110 +389,258 @@
                 background-color: #669DF1;
             }
 
-    /* Responsive */
-    @@media (max-width: 1024px) {
-        .boards-container {
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    /* Responsive styles */
+    @@media (max-height: 800px) {
+        .boards-container-wrapper {
+            max-height: 60vh;
+            min-height: 300px;
         }
     }
 
+    @@media (max-height: 700px) {
+        .boards-container-wrapper {
+            max-height: 55vh;
+            min-height: 250px;
+        }
+    }
+
+    @@media (max-height: 600px) {
+        .boards-container-wrapper {
+            max-height: 50vh;
+            min-height: 200px;
+        }
+    }
+
+    @@media (max-height: 500px) {
+        .boards-container-wrapper {
+            max-height: 45vh;
+            min-height: 150px;
+        }
+    }
+
+    @@media (max-height: 400px) {
+        .boards-container-wrapper {
+            max-height: 35vh;
+            min-height: 120px;
+        }
+    }
+
+    /* Also add this for mobile devices */
     @@media (max-width: 768px) {
-        .projects-container {
-            padding: 10px;
+        .boards-container-wrapper {
+            max-height: calc(100vh - 250px); /* Adjust for mobile */
         }
-
-        .boards-container {
-            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-        }
-
-        .board-card, .create-board-card {
-            min-height: 95px;
-            padding: 10px;
-        }
-
-        .projects-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-    }
-
-    @@media (max-width: 480px) {
-        .boards-container {
-            grid-template-columns: 1fr;
-        }
-
-        .pagination-container {
-            gap: 4px;
-        }
-
-            .pagination-container a {
-                padding: 5px 8px;
-                font-size: 12px;
+    
+        @@media (max-height: 700px) {
+            .boards-container-wrapper {
+                max-height: 50vh;
             }
+        }
     }
 </style>
-
-
-
 
 <div class="projects-container">
     <div class="projects-header">
         <h1 class="projects-title">Your Projects</h1>
     </div>
 
+    <!-- Filters Section -->
+    <div class="filters-container">
+        <input type="text" id="nameFilter" class="filter-input" placeholder="Filter by project name..."
+               value="@Context.Request.Query["projectName"]" />
+        <input type="text" id="memberFilter" class="filter-input" placeholder="Filter by username..."
+               value="@Context.Request.Query["memberName"]" />
+        <select id="priorityFilter" class="filter-input">
+            <option value="">All priorities</option>
+            <option value="High" selected="@(Context.Request.Query["priority"] == "High")">High</option>
+            <option value="Medium" selected="@(Context.Request.Query["priority"] == "Medium")">Medium</option>
+            <option value="Low" selected="@(Context.Request.Query["priority"] == "Low")">Low</option>
+        </select>
+        <button id="clearFilters" class="filter-input" style="background-color: #4a5568; cursor: pointer;">Clear Filters</button>
+    </div>
+
     <div class="boards-container-wrapper">
         <div class="boards-container" id="boardsContainer">
             <div class="create-board-card" id="createBoardCard">
                 <i class="bi bi-plus-lg"></i>
-                <span>Create new task</span>
+                <span>Create new project</span>
             </div>
 
             @if (Model.Projects.Any())
             {
                 foreach (var project in Model.Projects)
                 {
-                    <div class="board-card" data-project-id="@project.Id">
+                    // Get top 3 tasks - prioritize by due date and priority
+                    var topTasks = project.projectTasks?
+                    .OrderBy(t => t.DueDate ?? DateTime.MaxValue)
+                    .ThenByDescending(t => t.PriorityStatus)
+                    .Take(3)
+                    .ToList() ?? new List<ProjectTaskReturnModel>();
+
+                    // Get all unique members from both project users and task users
+                    var allMembers = new List<dynamic>();
+
+                    if (project.projectUsers != null && project.projectUsers.Any())
+                    {
+                        allMembers.AddRange(project.projectUsers.Select(pu => new
+                        {
+                            Id = pu.Id,
+                            Name = pu.UserName,
+                            Type = "project"
+                        }));
+                    }
+
+                    if (project.projectTasks != null)
+                    {
+                        var taskMembers = project.projectTasks
+                        .Where(t => t.taskUsers != null && t.taskUsers.Any())
+                        .SelectMany(t => t.taskUsers)
+                        .Select(tu => new
+                        {
+                            Id = tu.Id,
+                            Name = tu.UserName,
+                            Type = "task"
+                        });
+                        allMembers.AddRange(taskMembers);
+                    }
+
+                    var uniqueMembers = allMembers
+                    .GroupBy(m => m.Id)
+                    .Select(g => g.First())
+                    .Take(5)
+                    .ToList();
+
+                    var taskPriorities = project.projectTasks?
+                    .Where(t => t.PriorityStatus != null)
+                    .Select(t => t.PriorityStatus.ToString())
+                    .Distinct()
+                    .ToList() ?? new List<string>();
+
+                    <div class="board-card" data-project-id="@project.Id"
+                         data-project-name="@project.Name.ToLower()"
+                         data-assigned-members="@string.Join(" ", uniqueMembers.Select(m => m.Name?.ToLower() ?? ""))"
+                         data-task-priorities="@string.Join(" ", taskPriorities.Select(p => p.ToLower()))">
                         <div>
                             <h3>@project.Name</h3>
                             <p>@(string.IsNullOrEmpty(project.Description) ? "The guy is so lazy, nothing is left..." : project.Description)</p>
+
+                            <div class="tasks-section">
+                                <div class="tasks-title">TOP TASKS:</div>
+                                @if (topTasks.Any())
+                                {
+                                    <ul class="task-list">
+                                        @foreach (var task in topTasks)
+                                        {
+                                            <li class="task-item">
+                                                <span class="task-name" title="@task.Title">@task.Title</span>
+                                                <div class="task-details">
+                                                    @if (task.DueDate.HasValue)
+                                                    {
+                                                        <span class="task-deadline" title="Due: @task.DueDate.Value.ToString("MMM dd, yyyy")">
+                                                            @task.DueDate.Value.ToString("MMM dd")
+                                                        </span>
+                                                    }
+                                                    @if (task.PriorityStatus != null)
+                                                    {
+                                                        <span class="task-priority priority-@task.PriorityStatus.ToString().ToLower()">
+                                                            @task.PriorityStatus
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                                else
+                                {
+                                    <div class="no-tasks">No tasks yet</div>
+                                }
+                            </div>
+
+                            @if (uniqueMembers.Any())
+                            {
+                                <div class="members-section">
+                                    @foreach (var member in uniqueMembers)
+                                    {
+                                        <div class="member-avatar" title="@member.Name">
+                                            @if (!string.IsNullOrEmpty(member.Name))
+                                            {
+                                                @member.Name.Substring(0, 1).ToUpper()
+                                            }
+                                            else
+                                            {
+                                                <text>U</text>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
                         </div>
                     </div>
                 }
             }
-        </div>
-
-        <!-- Pagination -->
-        <div class="pagination-container">
-            @if (Model.TotalPages > 1)
+            else
             {
-                @if (Model.Page > 1)
-                {
-                    <a href="@Url.Action("Index", new { page = Model.Page - 1 })">&laquo; Prev</a>
-                }
-
-                @for (int i = 1; i <= Model.TotalPages; i++)
-                {
-                    <a href="@Url.Action("Index", new { page = i })"
-                       class="@(i == Model.Page ? "active" : "")">@i</a>
-                }
-
-                @if (Model.Page < Model.TotalPages)
-                {
-                    <a href="@Url.Action("Index", new { page = Model.Page + 1 })">Next &raquo;</a>
-                }
+                <div class="no-projects-message">
+                    @if (!string.IsNullOrEmpty(Context.Request.Query["projectName"]) || !string.IsNullOrEmpty(Context.Request.Query["memberName"]) || !string.IsNullOrEmpty(Context.Request.Query["priority"]))
+                    {
+                        <text>No projects found matching your search criteria.</text>
+                    }
+                    else
+                    {
+                        <text>No projects found. Create your first project to get started!</text>
+                    }
+                </div>
             }
         </div>
+    </div>
 
-        <!-- Create task dropdown -->
-        <div class="create-project-dropdown" id="projectDropdown">
-            <h4 class="text-center">Create Project</h4>
-            <button class="close-btn" id="closeDropdown">&times;</button>
-            <label for="projectName">Project Name</label>
-            <input type="text" id="projectName" placeholder="Project name" />
-            <label for="projectDescription">Description</label>
-            <textarea id="projectDescription" placeholder="Project description"></textarea>
-            <button class="submit-btn" id="submitProject">Create</button>
-        </div>
+    <!-- Pagination -->
+    <div class="pagination-container">
+        @if (Model.TotalPages > 1)
+        {
+            @if (Model.Page > 1)
+            {
+                <a href="@Url.Action("Index", new {
+                    page = Model.Page - 1,
+                    projectName = Context.Request.Query["projectName"],
+                    memberName = Context.Request.Query["memberName"],
+                    priority = Context.Request.Query["priority"]
+                })">&laquo; Prev</a>
+            }
+
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <a href="@Url.Action("Index", new {
+                    page = i,
+                    projectName = Context.Request.Query["projectName"],
+                    memberName = Context.Request.Query["memberName"],
+                    priority = Context.Request.Query["priority"]
+                })"
+                   class="@(i == Model.Page ? "active" : "")">@i</a>
+            }
+
+            @if (Model.Page < Model.TotalPages)
+            {
+                <a href="@Url.Action("Index", new {
+                    page = Model.Page + 1,
+                    projectName = Context.Request.Query["projectName"],
+                    memberName = Context.Request.Query["memberName"],
+                    priority = Context.Request.Query["priority"]
+                })">Next &raquo;</a>
+            }
+        }
+    </div>
+
+    <!-- Create project dropdown -->
+    <div class="create-project-dropdown" id="projectDropdown">
+        <h4 class="text-center">Create Project</h4>
+        <button class="close-btn" id="closeDropdown">&times;</button>
+        <label for="projectName">Project Name</label>
+        <input type="text" id="projectName" placeholder="Project name" />
+        <label for="projectDescription">Description</label>
+        <textarea id="projectDescription" placeholder="Project description"></textarea>
+        <button class="submit-btn" id="submitProject">Create</button>
     </div>
 </div>
 
@@ -363,6 +650,61 @@
         const projectDropdown = document.getElementById('projectDropdown');
         const closeDropdown = document.getElementById('closeDropdown');
         const projectNameInput = document.getElementById('projectName');
+
+        // Filter elements
+        const nameFilter = document.getElementById('nameFilter');
+        const memberFilter = document.getElementById('memberFilter');
+        const priorityFilter = document.getElementById('priorityFilter');
+        const clearFilters = document.getElementById('clearFilters');
+
+        function setInitialFilterValues() {
+            const urlParams = new URLSearchParams(window.location.search);
+            nameFilter.value = urlParams.get('projectName') || '';
+            memberFilter.value = urlParams.get('memberName') || '';
+            priorityFilter.value = urlParams.get('priority') || '';
+        }
+
+        // Search across all pages
+        function performSearch() {
+            const nameValue = nameFilter.value;
+            const memberValue = memberFilter.value;
+            const priorityValue = priorityFilter.value;
+
+            const params = new URLSearchParams();
+            if (nameValue) params.append('projectName', nameValue);
+            if (memberValue) params.append('memberName', memberValue);
+            if (priorityValue) params.append('priority', priorityValue);
+            params.append('page', '1');
+
+            window.location.href = '@Url.Action("Index", "Project")' + '?' + params.toString();
+        }
+
+        // Clear filters and reload
+        function clearFiltersHandler() {
+            window.location.href = '@Url.Action("Index", "Project")';
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        const debouncedSearch = debounce(performSearch, 500);
+
+        nameFilter.addEventListener('input', debouncedSearch);
+        memberFilter.addEventListener('input', debouncedSearch);
+        priorityFilter.addEventListener('change', debouncedSearch);
+
+        clearFilters.addEventListener('click', clearFiltersHandler);
+
+        setInitialFilterValues();
 
         function showDropdown() {
             const rect = createBoardCard.getBoundingClientRect();
@@ -409,7 +751,7 @@
             projectDropdown.style.display = 'none';
         });
 
-        submitProject.addEventListener('click', async function () {
+        document.getElementById('submitProject').addEventListener('click', async function () {
             const name = document.getElementById('projectName').value.trim();
             const desc = document.getElementById('projectDescription').value.trim();
             if (!name) { alert('Project name is required'); return; }
@@ -427,16 +769,18 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    const projectId = result.projectId || result.id;
+                    const projectId = result.projectId;
                     if (projectId) {
                         window.location.href = '@Url.Action("ProjectDetails", "Project")' + '?id=' + projectId;
+                    } else {
+                        window.location.reload();
                     }
                 } else {
-                    alert(result.message);
+                    alert(result.message || 'Error creating project');
                 }
             } catch (err) {
-                console.error(err);
-                alert('Error creating project.');
+                console.error('Error creating project:', err);
+                alert('Error creating project. Please try again.');
             }
         });
 

@@ -17,7 +17,11 @@ namespace TaskManagement.Data.Migrations.Models
         public DateTime? StartDate { get; set; }
         public DateTime? DueDate { get; set; }
         public TaskStatus ProgressStatus { get; set; }
-        public List<UserReturnModel> taskUsers { get; set; }
-        public List<TaskAttachmentReturnModel> taskAttachments { get; set; }
+        public PriorityStatus PriorityStatus { get; set; }
+        public List<UserReturnModel>? taskUsers { get; set; }
+        public string? CreatedBy { get; set; }
+        public DateTime? CreatedDateTime { get; set; }
+        public List<TaskAttachmentReturnModel>? taskAttachments { get; set; }
+        public List<TaskCommentReturnModel>? taskComments { get; set; }
     }
 }
