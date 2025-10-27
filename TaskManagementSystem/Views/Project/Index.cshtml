@@ -425,10 +425,9 @@
         }
     }
 
-    /* Also add this for mobile devices */
     @@media (max-width: 768px) {
         .boards-container-wrapper {
-            max-height: calc(100vh - 250px); /* Adjust for mobile */
+            max-height: calc(100vh - 250px);
         }
     
         @@media (max-height: 700px) {
@@ -470,14 +469,13 @@
             {
                 foreach (var project in Model.Projects)
                 {
-                    // Get top 3 tasks - prioritize by due date and priority
+                    // Get top 3 tasks
                     var topTasks = project.projectTasks?
                     .OrderBy(t => t.DueDate ?? DateTime.MaxValue)
                     .ThenByDescending(t => t.PriorityStatus)
                     .Take(3)
                     .ToList() ?? new List<ProjectTaskReturnModel>();
 
-                    // Get all unique members from both project users and task users
                     var allMembers = new List<dynamic>();
 
                     if (project.projectUsers != null && project.projectUsers.Any())

@@ -1295,7 +1295,6 @@ public class ProjectController : Controller
             var responseContent = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<JsonElement>(responseContent);
 
-            // Check if the API call was successful
             if (result.TryGetProperty("success", out var successProperty) &&
                 successProperty.GetBoolean())
             {

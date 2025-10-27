@@ -3,7 +3,7 @@
 let newTaskData = {
     title: '',
     description: '',
-    priority: '1', // Changed to use numeric values like the main system
+    priority: '1',
     status: 1, // Default to "To Do"
     dueDate: '',
     assigneeIds: []
@@ -15,7 +15,7 @@ function openAddTaskModal() {
     document.body.style.overflow = 'hidden';
 
     resetAddTaskForm();
-    setupAddTaskFileUpload(); // Initialize file upload
+    setupAddTaskFileUpload();
 
     setTimeout(() => {
         const titleInput = document.getElementById('addTaskTitle');
@@ -23,7 +23,6 @@ function openAddTaskModal() {
 
         titleInput.addEventListener('input', validateAddTaskForm);
 
-        // Initialize the date picker for add task modal
         initAddTaskDatePicker();
     }, 100);
 }
@@ -31,11 +30,9 @@ function openAddTaskModal() {
 function initAddTaskDatePicker() {
     const addTaskDueDateInput = document.getElementById('addTaskDueDate');
     if (addTaskDueDateInput) {
-        // Remove any existing event listeners to avoid duplicates
         addTaskDueDateInput.removeEventListener('click', handleAddTaskDateClick);
         addTaskDueDateInput.addEventListener('click', handleAddTaskDateClick);
 
-        // Initialize clear button visibility
         updateClearButtonVisibility(addTaskDueDateInput);
     }
 }
@@ -94,10 +91,8 @@ function resetAddTaskForm() {
         assigneeIds: []
     };
 
-    // Update UI
     updateAddTaskUI();
 
-    // Validate form
     validateAddTaskForm();
 
     const titleInput = document.getElementById('addTaskTitle');
@@ -162,21 +157,17 @@ function clearAddTaskDueDate() {
     updateAddTaskUI();
 }
 
-// Override the global selectDate function for add task modal
 const originalSelectDate = window.selectDate;
 window.selectDate = function (day) {
     if (!currentDatePicker || !currentDateInput) return;
 
-    // Create the selected date using the current view month/year and the selected day
     const selectedDate = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth(), day);
 
-    // Format date as YYYY-MM-DD
     const year = selectedDate.getFullYear();
     const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
     const dayFormatted = String(selectedDate.getDate()).padStart(2, '0');
     const formattedDate = `${year}-${month}-${dayFormatted}`;
 
-    // Update the input value
     currentDateInput.value = formattedDate;
     updateClearButtonVisibility(currentDateInput);
 
@@ -216,7 +207,6 @@ function toggleAddTaskMember(userId, userName, userItem) {
         newTaskData.assigneeIds = newTaskData.assigneeIds.filter(id => id !== userId);
         userItem.classList.remove('selected');
     } else {
-        // FIX: Verify the user is still a project member before adding
         if (usersData.some(user => user.Id === userId)) {
             newTaskData.assigneeIds.push(userId);
             userItem.classList.add('selected');
@@ -348,7 +338,6 @@ async function createTaskFromModal() {
         return;
     }
 
-    // Double-check validation
     validateAddTaskForm();
     if (document.querySelector('#addTaskModal .create-btn').disabled) {
         return;
@@ -366,7 +355,6 @@ async function createTaskFromModal() {
         const taskData = await createTaskOnServer(newTaskData);
 
         if (taskData && taskData.Id) {
-            // FIX: Ensure taskUsers is properly set
             if (!taskData.taskUsers) {
                 taskData.taskUsers = usersData.filter(user => newTaskData.assigneeIds.includes(user.Id));
             }
@@ -453,7 +441,7 @@ async function createTaskOnServer(taskData) {
                 CreatedDateTime: data.task?.createdDateTime || data.task?.CreatedDateTime || new Date().toISOString(),
                 CreatedBy: data.task?.createdBy || data.task?.CreatedBy || currentUserId,
                 AssignedByUserName: data.task?.assignedByUserName || 'You',
-                taskUsers: assignedUsers, // FIX: Properly populate taskUsers
+                taskUsers: assignedUsers,
                 taskAttachments: [],
                 taskComments: [],
                 CommentsCount: 0
@@ -512,8 +500,8 @@ async function handleAddTaskFileUpload(files) {
         const attachment = {
             Id: 'temp_' + Date.now() + '_' + successCount,
             FileName: file.name,
-            File: file, // Store the File object
-            FilePath: URL.createObjectURL(file), // Create preview URL
+            File: file,
+            FilePath: URL.createObjectURL(file),
             FileSize: file.size,
             CreatedDateTime: new Date().toISOString()
         };
@@ -619,8 +607,6 @@ function downloadAddTaskAttachment(attachmentId) {
     const attachment = newTaskAttachments.find(a => a.Id === attachmentId);
     if (attachment && attachment.FilePath) {
         try {
-            // For new attachments, we might need to create a blob URL
-            // This is a simplified version - you might need to adjust based on your file handling
             window.open(attachment.FilePath, '_blank');
         } catch (error) {
             console.error('Error downloading attachment:', error);
