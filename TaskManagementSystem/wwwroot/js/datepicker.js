@@ -10,7 +10,6 @@ function initCustomDatePickers() {
         input.addEventListener('click', function (e) {
             e.stopPropagation();
 
-            // Check if clicking the same input that already has an open picker
             if (currentDateInput === this && currentDatePicker) {
                 closeDatePicker();
             } else {
@@ -18,7 +17,6 @@ function initCustomDatePickers() {
             }
         });
 
-        // Also validate on manual input
         input.addEventListener('blur', function () {
             validateDateRange();
         });
@@ -34,16 +32,14 @@ function initCustomDatePickers() {
 }
 
 function openDatePicker(input) {
-    // Close any existing date picker first
     closeDatePicker();
 
     currentDateInput = input;
 
-    // Use the input value or current date for the view
     const inputValue = input.value;
     if (inputValue) {
         const [year, month, day] = inputValue.split('-').map(Number);
-        currentViewDate = new Date(year, month - 1, day); // month is 0-indexed in Date
+        currentViewDate = new Date(year, month - 1, day);
     } else {
         currentViewDate = new Date();
     }
@@ -65,7 +61,6 @@ function openDatePicker(input) {
 
     currentDatePicker = datePicker;
 
-    // Add event listeners
     attachDatePickerEvents();
 }
 
@@ -82,11 +77,10 @@ function createDatePickerHTML(viewDate) {
     const month = viewDate.getMonth();
     const today = new Date();
 
-    // Get first day of month and number of days
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
-    const startingDay = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const startingDay = firstDay.getDay();
 
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'];
@@ -102,7 +96,6 @@ function createDatePickerHTML(viewDate) {
         <div class="date-picker-grid">
     `;
 
-    // Day names
     dayNames.forEach(day => {
         html += `<div class="date-picker-day">${day}</div>`;
     });
@@ -137,7 +130,7 @@ function createDatePickerHTML(viewDate) {
     }
 
     // Next month days
-    const totalCells = 42; // 6 rows * 7 days
+    const totalCells = 42;
     const cellsUsed = startingDay + daysInMonth;
     const remainingCells = totalCells - cellsUsed;
 
@@ -150,7 +143,6 @@ function createDatePickerHTML(viewDate) {
 
     html += '</div>';
 
-    // Add clear button at the bottom if the input has a value
     if (currentDateInput && currentDateInput.value) {
         html += `
             <div class="date-picker-footer">
@@ -168,13 +160,11 @@ function isDateDisabled(date) {
     const startDateInput = document.getElementById('startDateFilter');
     const endDateInput = document.getElementById('endDateFilter');
 
-    // If we're selecting start date and end date is already set
     if (currentDateInput && currentDateInput.id === 'startDateFilter' && endDateInput.value) {
         const endDate = new Date(endDateInput.value);
         return date > endDate;
     }
 
-    // If we're selecting end date and start date is already set
     if (currentDateInput && currentDateInput.id === 'endDateFilter' && startDateInput.value) {
         const startDate = new Date(startDateInput.value);
         return date < startDate;
@@ -216,7 +206,7 @@ function attachDatePickerEvents() {
         });
     }
 
-    // Disabled dates - show tooltip on hover
+    // Disabled dates
     const disabledElements = currentDatePicker.querySelectorAll('.date-picker-date.disabled');
     disabledElements.forEach(dateEl => {
         dateEl.addEventListener('mouseenter', function (e) {
@@ -236,7 +226,6 @@ function clearDateFromPicker() {
     currentDateInput.value = '';
     updateClearButtonVisibility(currentDateInput);
 
-    // Handle different contexts
     if (currentDateInput.id === 'addTaskDueDate') {
         // For add task modal - update the newTaskData
         if (typeof newTaskData !== 'undefined') {
@@ -251,7 +240,6 @@ function clearDateFromPicker() {
             saveDueDateToServer('');
         }
     } else {
-        // For filter dates
         applyFilters();
     }
 
@@ -301,42 +289,34 @@ function hideDisabledTooltip() {
 function navigateMonth(direction) {
     if (!currentDatePicker || !currentDateInput) return;
 
-    // Update the view date
     currentViewDate = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() + direction, 1);
 
-    // Recreate the date picker with new month
     currentDatePicker.innerHTML = createDatePickerHTML(currentViewDate);
 
-    // Reattach event listeners
     attachDatePickerEvents();
 }
 
 function selectDate(day) {
     if (!currentDatePicker || !currentDateInput) return;
 
-    // Create the selected date using UTC to avoid timezone issues
     const selectedDate = new Date(Date.UTC(
         currentViewDate.getFullYear(),
         currentViewDate.getMonth(),
         day
     ));
 
-    // Validate the date range
     if (!validateSelectedDate(selectedDate)) {
         return;
     }
 
-    // Format date as YYYY-MM-DD using UTC
     const year = selectedDate.getUTCFullYear();
     const month = String(selectedDate.getUTCMonth() + 1).padStart(2, '0');
     const dayFormatted = String(selectedDate.getUTCDate()).padStart(2, '0');
     const formattedDate = `${year}-${month}-${dayFormatted}`;
 
-    // Update the input value
     currentDateInput.value = formattedDate;
     updateClearButtonVisibility(currentDateInput);
 
-    // Handle different contexts
     if (currentDateInput.id === 'addTaskDueDate') {
         // For add task modal - update the newTaskData
         if (typeof newTaskData !== 'undefined') {
@@ -351,7 +331,6 @@ function selectDate(day) {
             saveDueDateToServer(formattedDate);
         }
     } else {
-        // For filter dates
         applyFilters();
     }
 
@@ -393,12 +372,10 @@ function validateDateRange() {
 
         if (startDate > endDate) {
             alert('Start date cannot be after end date');
-            // Auto-correct by swapping dates
             const temp = startDateInput.value;
             startDateInput.value = endDateInput.value;
             endDateInput.value = temp;
 
-            // Re-apply filters with corrected dates
             applyFilters();
         }
     }
@@ -410,7 +387,6 @@ function clearDate(inputId) {
         input.value = '';
         updateClearButtonVisibility(input);
 
-        // Handle different contexts
         if (inputId === 'addTaskDueDate') {
             // For add task modal
             if (typeof newTaskData !== 'undefined') {
@@ -425,11 +401,9 @@ function clearDate(inputId) {
                 saveDueDateToServer('');
             }
         } else {
-            // For filter dates
             applyFilters();
         }
 
-        // If we're in the date picker, close it
         if (currentDateInput && currentDateInput.id === inputId) {
             closeDatePicker();
         }

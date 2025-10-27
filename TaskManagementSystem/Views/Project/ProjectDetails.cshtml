@@ -3547,16 +3547,8 @@
     function filterByPriority(task) {
         if (!currentFilters.priority) return true;
 
-        // Convert both to strings for consistent comparison
         const taskPriority = String(task.PriorityStatus || '1');
         const filterPriority = String(currentFilters.priority);
-
-        console.log('Priority Filter Debug:', {
-            taskTitle: task.Title,
-            taskPriority: taskPriority,
-            filterPriority: filterPriority,
-            matches: taskPriority === filterPriority
-        });
 
         return taskPriority === filterPriority;
     }
@@ -3921,7 +3913,6 @@
         // Load comments
         loadTaskComments();
 
-        // FIX: Initialize comment input validation
         initializeCommentInputValidation();
 
         updateTaskActions();
@@ -4046,8 +4037,6 @@
                 }
 
                 updateTableRow(currentTask.Id, 'title', newTitle);
-
-                console.log('Title updated successfully');
             } else {
                 alert('Failed to update title: ' + (data.message || 'Unknown error'));
                 modalTitle.value = originalTitle;
@@ -4110,8 +4099,6 @@
                 }
 
                 updateTableRow(currentTask.Id, 'description', newDescription);
-
-                console.log('Description updated successfully');
             } else {
                 alert('Failed to update description: ' + (data.message || 'Unknown error'));
                 cancelDescriptionEdit();
@@ -4250,10 +4237,8 @@
                 updateTaskUsersDisplay();
                 updateMembersDropdownSelection();
 
-                // FIX: Refresh the table to show updated members
                 updateTableRow(currentTask.Id, 'assignedTo', currentTask.taskUsers);
 
-                console.log('Member added to task successfully');
                 return true;
             } else {
                 alert('Failed to add member: ' + (data.message || 'Unknown error'));
@@ -4292,7 +4277,6 @@
                 updateTaskUsersDisplay();
                 updateMembersDropdownSelection();
 
-                // FIX: Refresh the table to show updated members
                 updateTableRow(currentTask.Id, 'assignedTo', currentTask.taskUsers);
 
                 return true;
@@ -4349,7 +4333,6 @@
             return;
         }
 
-        // FIX: Verify the user is still a project member
         if (!usersData.some(user => user.Id === userId)) {
             alert('This user is no longer a project member');
             return;
@@ -4491,10 +4474,6 @@
                 successCount++;
             }
         }
-
-        if (successCount > 0) {
-            console.log(`Successfully uploaded ${successCount} out of ${files.length} files`);
-        }
     }
 
     async function uploadFilesToServer(files) {
@@ -4613,8 +4592,6 @@
 
                 updateTaskAttachmentsDisplay();
                 updateModalAttachmentsDisplay();
-
-                console.log('Attachment deleted successfully');
             } else {
                 alert('Failed to delete attachment: ' + (result.message || 'Unknown error'));
             }
@@ -4686,7 +4663,6 @@
     }
 
     function addAttachmentToModalList(attachment) {
-        console.log(attachment);
         const modalAttachmentsList = document.getElementById('modalAttachmentsList');
 
         const fileIcon = getFileIcon(attachment.FileName);
@@ -4782,8 +4758,6 @@
 
                 updateStatusLabels();
                 updateTableRow(currentTask.Id, 'status', newStatus);
-
-                console.log(`Task moved to ${statusNames[newStatus]} successfully`);
             } else {
                 alert('Failed to move task: ' + (data.message || 'Unknown error'));
                 closeAllDropdowns();
@@ -4819,7 +4793,6 @@
 
                 removeTableRow(currentTask.Id);
                 closeTaskModal();
-                console.log('Task removed successfully');
             } else {
                 // Show specific error message from backend
                 alert('Failed to remove task: ' + (data.message || 'Unknown error'));
@@ -4845,7 +4818,6 @@
             const comments = getTaskCommentsFromModel(currentTask.Id);
 
             if (comments && comments.length > 0) {
-                // FIX: Remove duplicates by using a Set with comment IDs
                 const uniqueComments = [];
                 const seenCommentIds = new Set();
 
@@ -4926,7 +4898,6 @@
         const addCommentBtn = document.querySelector('#commentsSidebar .btn-save');
         const commentText = commentInput.value.trim();
 
-        // Double-check validation (should already be handled by button state)
         if (!commentText) {
             alert('Please enter a comment');
             commentInput.focus();
@@ -4934,45 +4905,36 @@
         }
 
         try {
-            // Show loading state
             const originalText = addCommentBtn.textContent;
             addCommentBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Adding...';
             addCommentBtn.disabled = true;
             commentInput.disabled = true;
 
             const newComment = await addTaskCommentToServer(currentTask.Id, commentText);
-            console.log('New comment received:', newComment);
 
             if (newComment) {
                 commentInput.value = '';
 
-                // Add to UI immediately for better UX
                 addCommentToUI(newComment);
 
-                // Update local data but prevent duplicates
                 updateLocalTaskWithComment(currentTask.Id, newComment);
 
-                // Update table display
                 updateTableRow(currentTask.Id, 'comments', { refresh: true });
 
-                // Auto-scroll to TOP after adding new comment
                 const commentsList = document.getElementById('taskCommentsList');
                 commentsList.scrollTop = 0;
 
-                // Update button state after clearing input
                 updateAddCommentButtonState(commentInput, addCommentBtn);
             }
         } catch (error) {
             console.error('Error adding comment:', error);
             alert('Error adding comment. Please try again.');
         } finally {
-            // Restore button state
             const addCommentBtn = document.querySelector('#commentsSidebar .btn-save');
             addCommentBtn.textContent = 'Add Comment';
             addCommentBtn.disabled = false; // Will be updated by updateAddCommentButtonState
             commentInput.disabled = false;
 
-            // Update button state based on current input
             updateAddCommentButtonState(commentInput, addCommentBtn);
         }
     }
@@ -4980,20 +4942,13 @@
     function addCommentToUI(newComment) {
         const commentsList = document.getElementById('taskCommentsList');
 
-        // Remove "no comments" message if it exists
         const noComments = commentsList.querySelector('.no-comments');
         if (noComments) {
             noComments.remove();
         }
 
-        // FIX: Check if comment already exists in UI before adding
         const commentId = newComment.id || newComment.Id;
         const existingComment = commentsList.querySelector(`[data-comment-id="${commentId}"]`);
-
-        if (existingComment) {
-            console.log('Comment already exists in UI, skipping duplicate');
-            return;
-        }
 
         // Create new comment element
         const commentElement = document.createElement('div');
@@ -5015,7 +4970,6 @@
             ` : ''}
         `;
 
-        // Add to the TOP of the comments list (newest first)
         commentsList.insertBefore(commentElement, commentsList.firstChild);
     }
 
@@ -5028,7 +4982,6 @@
                 tasksData[taskIndex].taskComments = [];
             }
 
-            // FIX: Check if comment already exists before adding
             const commentId = newComment.id || newComment.Id;
             const commentExists = tasksData[taskIndex].taskComments.some(
                 comment => (comment.id || comment.Id) === commentId
@@ -5036,7 +4989,6 @@
 
             if (!commentExists) {
                 tasksData[taskIndex].taskComments.push(newComment);
-                console.log('Added comment to tasksData:', newComment);
             } else {
                 console.log('Comment already exists in tasksData, skipping duplicate');
             }
@@ -5047,14 +4999,12 @@
                     currentTask.taskComments = [];
                 }
 
-                // FIX: Check if comment already exists in currentTask too
                 const currentTaskCommentExists = currentTask.taskComments.some(
                     comment => (comment.id || comment.Id) === commentId
                 );
 
                 if (!currentTaskCommentExists) {
                     currentTask.taskComments.push(newComment);
-                    console.log('Added comment to currentTask:', newComment);
                 } else {
                     console.log('Comment already exists in currentTask, skipping duplicate');
                 }
@@ -5093,11 +5043,8 @@
     }
 
     async function refreshTaskComments(taskId) {
-        // After adding a comment, we need to refresh the comments data
         const task = tasksData.find(t => t.Id === taskId);
         if (task) {
-            // For now, we'll reload the comments by calling loadTaskComments again
-            // In a real app, you might want to refetch the task data
             await loadTaskComments();
         }
     }
@@ -5540,8 +5487,6 @@
 
                 // Update table display
                 updateTableRow(currentTask.Id, 'dueDate', dueDate);
-
-                console.log('Due date updated successfully');
             } else {
                 alert('Failed to update due date: ' + (data.message || 'Unknown error'));
                 // Revert the input value on error
@@ -5719,7 +5664,6 @@
             userItem.style.opacity = '1';
             userItem.style.cursor = 'pointer';
 
-            // Update the member filter dropdown
             refreshMemberFilter();
 
         } catch (error) {
@@ -5808,7 +5752,6 @@
         const navbarRight = document.querySelector('.navbar-right');
         const dropdown = navbarRight.querySelector('.dropdown');
 
-        // Check if user already exists in navbar
         const existingAvatar = navbarRight.querySelector(`.user-avatar[data-user-id="${userId}"]`);
         if (existingAvatar) return;
 
@@ -5825,12 +5768,11 @@
 
         navbarRight.insertBefore(newAvatar, dropdown);
 
-        // Update global usersData
         if (!usersData.some(user => user.Id === userId)) {
             usersData.push({
                 Id: userId,
                 UserName: userName,
-                Email: '' // You might want to get this from the response
+                Email: ''
             });
         }
     }
@@ -5842,7 +5784,6 @@
             avatarToRemove.remove();
         }
 
-        // Update global usersData
         const userIndex = usersData.findIndex(user => user.Id === userId);
         if (userIndex !== -1) {
             usersData.splice(userIndex, 1);
@@ -5850,7 +5791,6 @@
     }
 
     function addUserToModalMemberList(userId, userName) {
-        // Update the global usersData
         if (!usersData.some(user => user.Id === userId)) {
             usersData.push({
                 Id: userId,
@@ -5859,7 +5799,6 @@
             });
         }
 
-        // Refresh member lists in all modals
         refreshAllMemberLists();
     }
 
@@ -5868,7 +5807,6 @@
 
         tasksData.forEach(task => {
             if (task.taskUsers) {
-                // Filter out users who are no longer project members
                 const validTaskUsers = task.taskUsers.filter(user =>
                     projectMemberIds.has(user.Id)
                 );
@@ -5885,39 +5823,31 @@
             }
         });
 
-        // Refresh the table to reflect changes
         renderTable();
     }
 
     function removeUserFromModalMemberList(userId) {
-        // Update global usersData
         const userIndex = usersData.findIndex(user => user.Id === userId);
         if (userIndex !== -1) {
             usersData.splice(userIndex, 1);
         }
 
-        // Remove user from all tasks and refresh UI
         removeUserFromAllTasks(userId);
 
-        // Sync task members with current project members
         syncTaskMembersWithProject();
 
-        // Refresh member lists in all modals
         refreshAllMemberLists();
     }
 
     function refreshAllMemberLists() {
-        // Refresh Add Task Modal members list
         if (document.getElementById('addTaskMembersList')) {
             populateAddTaskMembersList();
         }
 
-        // Refresh Task Modal members list
         if (document.getElementById('membersList')) {
             populateMembersList();
         }
 
-        // Refresh member filter dropdown
         refreshMemberFilter();
     }
 
@@ -5948,19 +5878,16 @@
                 const initialUserCount = task.taskUsers.length;
                 task.taskUsers = task.taskUsers.filter(user => user.Id !== userId);
 
-                // Check if any users were actually removed
                 if (task.taskUsers.length !== initialUserCount) {
                     needsTableRefresh = true;
                 }
 
-                // Update UI if this task is currently being viewed
                 if (currentTask && currentTask.Id === task.Id) {
                     updateTaskUsersDisplay();
                 }
             }
         });
 
-        // Refresh the table if any tasks were updated
         if (needsTableRefresh) {
             renderTable();
             updatePagination();
@@ -6035,10 +5962,8 @@
         const addCommentBtn = document.querySelector('#commentsSidebar .btn-save');
 
         if (commentInput && addCommentBtn) {
-            // Initial state check
             updateAddCommentButtonState(commentInput, addCommentBtn);
 
-            // Add event listeners for real-time validation
             commentInput.addEventListener('input', () => {
                 updateAddCommentButtonState(commentInput, addCommentBtn);
             });
@@ -6053,13 +5978,13 @@
         const commentText = commentInput.value.trim();
 
         if (!commentText) {
-            // Disable button when no text
+            // Disable button
             addCommentBtn.disabled = true;
             addCommentBtn.style.opacity = '0.6';
             addCommentBtn.style.cursor = 'not-allowed';
             addCommentBtn.title = 'Please enter a comment';
         } else {
-            // Enable button when there's text
+            // Enable button
             addCommentBtn.disabled = false;
             addCommentBtn.style.opacity = '1';
             addCommentBtn.style.cursor = 'pointer';
@@ -6121,16 +6046,11 @@
             const result = await response.json();
 
             if (result.success) {
-                // Remove comment from local data
                 removeCommentFromLocalData(commentId);
 
-                // Reload comments in the modal
                 await loadTaskComments();
 
-                // Update table display
                 updateTableRow(currentTask.Id, 'comments', { refresh: true });
-
-                console.log('Comment deleted successfully');
             } else {
                 throw new Error(result.message || 'Failed to delete comment');
             }
@@ -6147,7 +6067,6 @@
                 (comment.id || comment.Id) != commentId
             );
 
-            // Update comments count
             currentTask.CommentsCount = Math.max(0, (currentTask.CommentsCount || 0) - 1);
         }
 
@@ -6158,7 +6077,6 @@
                 (comment.id || comment.Id) != commentId
             );
 
-            // Update comments count
             tasksData[taskIndex].CommentsCount = Math.max(0, (tasksData[taskIndex].CommentsCount || 0) - 1);
         }
     }
@@ -6166,7 +6084,6 @@
     window.addEventListener('resize', function () {
         const modal = document.getElementById('taskModal');
         if (modal.classList.contains('active')) {
-            // Force reflow to ensure proper sizing
             modal.style.display = 'none';
             modal.offsetHeight; // Trigger reflow
             modal.style.display = 'block';
