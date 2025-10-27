@@ -14,6 +14,7 @@ namespace TaskManagement.Data.Migrations.Data
         public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
         public DbSet<TaskAttachment> TaskAttachments => Set<TaskAttachment>();
         public DbSet<TaskUser> TaskUsers => Set<TaskUser>();
+        public DbSet<TaskComment> TaskComments => Set<TaskComment>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -24,6 +25,7 @@ namespace TaskManagement.Data.Migrations.Data
             modelBuilder.Entity<ProjectTask>().ToTable("ProjectTask");
             modelBuilder.Entity<TaskAttachment>().ToTable("TaskAttachment");
             modelBuilder.Entity<TaskUser>().ToTable("TaskUser");
+            modelBuilder.Entity<TaskComment>().ToTable("TaskComment");
             modelBuilder.Entity<IdentityRole>().HasData(
                 new IdentityRole { Id = "1", Name = "Administrator", NormalizedName = "ADMINISTRATOR" },
                 new IdentityRole { Id = "2", Name = "RegisterUser", NormalizedName = "REGISTERUSER" }
