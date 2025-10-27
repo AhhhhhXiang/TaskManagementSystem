@@ -7,19 +7,22 @@
         public IProjectUserRepository ProjectUserRepository { get; }
         public ITaskAttachmentRepository TaskAttachmentRepository { get; }
         public ITaskUserRepository TaskUserRepository { get; }
+        public ITaskCommentRepository TaskCommentRepository { get; }
 
         public TaskManagementClient(
             IProjectRepository projectRepository,
             IProjectTaskRepository projectTaskRepository,
             IProjectUserRepository projectUserRepository,
             ITaskAttachmentRepository taskAttachmentRepository,
-            ITaskUserRepository taskUserRepository)
+            ITaskUserRepository taskUserRepository,
+            ITaskCommentRepository taskCommentRepository)
         {
             ProjectRepository = projectRepository;
             ProjectTaskRepository = projectTaskRepository;
             ProjectUserRepository = projectUserRepository;
             TaskAttachmentRepository = taskAttachmentRepository;
             TaskUserRepository = taskUserRepository;
+            TaskCommentRepository = taskCommentRepository;
         }
     }
 }

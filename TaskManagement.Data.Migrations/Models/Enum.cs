@@ -48,4 +48,23 @@ namespace TaskManagement.Data.Migrations.Models
         public const string ToBeReviewed = "To Be Reviewed";
         public const string ToBeCorrected = "To Be Corrected";
     }
+
+    public enum PriorityStatus : byte
+    {
+        [Display(Name = constPriorityStatus.Low)]
+        Low = 1,
+
+        [Display(Name = constPriorityStatus.Medium)]
+        Medium = 2,
+
+        [Display(Name = constPriorityStatus.High)]
+        High = 3
+    }
+
+    public static class constPriorityStatus
+    {
+        public const string Low = "Low";
+        public const string Medium = "Medium";
+        public const string High = "High";
+    }
 }
