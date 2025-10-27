@@ -8,5 +8,6 @@
         public DateTime? StartDate { get; set; }
         public DateTime? DueDate { get; set; }
         public TaskManagement.Data.Migrations.Models.TaskStatus ProgressStatus { get; set; }
+        public TaskManagement.Data.Migrations.Models.PriorityStatus PriorityStatus { get; set; }
     }
 }

@@ -14,12 +14,13 @@ namespace TaskManagement.Data.Migrations.Models
         [StringLength(50)]
         [Column(TypeName = "varchar")]
         public string Title { get; set; }
-        [StringLength(200)]
+        [StringLength(1000)]
         [Column(TypeName = "varchar")]
         public string? Description { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? DueDate { get; set; }
         public TaskStatus ProgressStatus { get; set; }
+        public PriorityStatus priorityStatus { get; set; }
 #pragma warning disable 8618
         [Required]
         [StringLength(50)]

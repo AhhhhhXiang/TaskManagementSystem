@@ -17,6 +17,7 @@ namespace TaskManagement.Core.Repository.Models
         public DateTime? StartDate { get; set; }
         public DateTime? DueDate { get; set; }
         public TaskManagement.Data.Migrations.Models.TaskStatus? ProgressStatus { get; set; }
+        public TaskManagement.Data.Migrations.Models.PriorityStatus? PriorityStatus { get; set; }
         public string CreatedBy { get; set; }
         public DateTime CreatedDateTime { get; set; }
         public string? UpdatedBy { get; set; }

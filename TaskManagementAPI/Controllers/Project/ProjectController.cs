@@ -31,9 +31,56 @@ namespace TaskManagementAPI.Controllers
 
             var projectsQuery = _client.ProjectRepository.GetAll().AsQueryable();
 
+            // Filter by project name
             if (!string.IsNullOrEmpty(form.projectName))
             {
-                projectsQuery = projectsQuery.Where(p => p.Name.Contains(form.projectName));
+                projectsQuery = projectsQuery.Where(p => p.Name.ToLower().Contains(form.projectName.ToLower()));
+            }
+
+            // Filter by assigned member
+            if (!string.IsNullOrEmpty(form.memberName))
+            {
+                var lowerMemberName = form.memberName.ToLower();
+
+                var userProjectsByMember = _client.ProjectUserRepository
+                    .GetAll()
+                    .Where(pu => _userManager.Users
+                        .Any(u => u.Id == pu.UserId.ToString() &&
+                                 (u.UserName.ToLower().Contains(lowerMemberName) ||
+                                  u.Email.ToLower().Contains(lowerMemberName))))
+                    .Select(pu => pu.ProjectId)
+                    .Distinct()
+                    .ToList();
+
+                var taskProjectsByMember = _client.TaskUserRepository
+                    .GetAll()
+                    .Where(tu => _userManager.Users
+                        .Any(u => u.Id == tu.UserId.ToString() &&
+                                 (u.UserName.ToLower().Contains(lowerMemberName) ||
+                                  u.Email.ToLower().Contains(lowerMemberName))))
+                    .Select(tu => _client.ProjectTaskRepository.GetById(tu.TaskId))
+                    .Where(t => t != null)
+                    .Select(t => t.ProjectId)
+                    .Distinct()
+                    .ToList();
+
+                var allFilteredProjectIds = userProjectsByMember.Union(taskProjectsByMember).Distinct().ToList();
+
+                projectsQuery = projectsQuery.Where(p => allFilteredProjectIds.Contains(p.Id));
+            }
+
+            // Filter by priority
+            if (!string.IsNullOrEmpty(form.priority))
+            {
+                var lowerPriority = form.priority.ToLower();
+                var priorityProjects = _client.ProjectTaskRepository
+                    .GetAll()
+                    .Where(t => t.priorityStatus.ToString().ToLower() == lowerPriority)
+                    .Select(t => t.ProjectId)
+                    .Distinct()
+                    .ToList();
+
+                projectsQuery = projectsQuery.Where(p => priorityProjects.Contains(p.Id));
             }
 
             if (userRole == "RegisterUser" && !string.IsNullOrEmpty(userId))
@@ -45,10 +92,9 @@ namespace TaskManagementAPI.Controllers
                     .ToList();
 
                 projectsQuery = projectsQuery.Where(p => userProjects.Contains(p.Id));
-
-                Console.WriteLine($"UserProjects: {string.Join(", ", userProjects)}");
-                Console.WriteLine($"Project IDs: {string.Join(", ", projectsQuery.Select(p => p.Id))}");
             }
+
+            var totalCount = projectsQuery.Count();
 
             // Pagination
             int page = form.page > 0 ? form.page : 1;
@@ -90,7 +136,10 @@ namespace TaskManagementAPI.Controllers
                                     Description = task.Description,
                                     StartDate = task.StartDate,
                                     DueDate = task.DueDate,
-                                    ProgressStatus = task.ProgressStatus
+                                    ProgressStatus = task.ProgressStatus,
+                                    PriorityStatus = task.priorityStatus,
+                                    CreatedBy = task.CreatedBy,
+                                    CreatedDateTime = task.CreatedDateTime
                                 };
 
                                 if (form.modules.Contains("TaskUser"))
@@ -132,6 +181,30 @@ namespace TaskManagementAPI.Controllers
                                         .ToList();
 
                                     taskReturnModel.taskAttachments = taskAttachments;
+                                }
+
+                                if (form.modules.Contains("TaskComment"))
+                                {
+                                    var taskComments = _client.TaskCommentRepository
+                                        .GetAll()
+                                        .Where(ta => ta.TaskId == task.Id)
+                                        .ToList()
+                                        .Select(ta =>
+                                        {
+                                            var user = _userManager.FindByIdAsync(ta.UserId.ToString()).Result;
+                                            return new TaskCommentReturnModel
+                                            {
+                                                Id = ta.Id,
+                                                TaskId = ta.TaskId,
+                                                UserId = ta.UserId,
+                                                Username = user?.UserName ?? "Unknown",
+                                                Comment = ta.Comment,
+                                                CreatedDateTime = ta.CreatedDateTime
+                                            };
+                                        })
+                                        .ToList();
+
+                                    taskReturnModel.taskComments = taskComments;
                                 }
 
                                 return taskReturnModel;
@@ -176,7 +249,7 @@ namespace TaskManagementAPI.Controllers
                 projects = responseProjects,
                 page = page,
                 pageSize = pageSize,
-                totalCount = projectsQuery.Count()
+                totalCount = totalCount
             };
 
             return new JsonResult(response);
@@ -217,6 +290,9 @@ namespace TaskManagementAPI.Controllers
                                 StartDate = task.StartDate,
                                 DueDate = task.DueDate,
                                 ProgressStatus = task.ProgressStatus,
+                                PriorityStatus = task.priorityStatus,
+                                CreatedBy = task.CreatedBy,
+                                CreatedDateTime = task.CreatedDateTime
                             };
 
                             if (form.modules.Contains("TaskUser"))
@@ -258,6 +334,30 @@ namespace TaskManagementAPI.Controllers
                                     .ToList();
 
                                 taskReturnModel.taskAttachments = taskAttachments;
+                            }
+
+                            if (form.modules.Contains("TaskComment"))
+                            {
+                                var taskComments = _client.TaskCommentRepository
+                                    .GetAll()
+                                    .Where(ta => ta.TaskId == task.Id)
+                                    .ToList()
+                                    .Select(ta =>
+                                    {
+                                        var user = _userManager.FindByIdAsync(ta.UserId.ToString()).Result;
+                                        return new TaskCommentReturnModel
+                                        {
+                                            Id = ta.Id,
+                                            TaskId = ta.TaskId,
+                                            UserId = ta.UserId,
+                                            Username = user?.UserName ?? "Unknown",
+                                            Comment = ta.Comment,
+                                            CreatedDateTime = ta.CreatedDateTime
+                                        };
+                                    })
+                                    .ToList();
+
+                                taskReturnModel.taskComments = taskComments;
                             }
 
                             return taskReturnModel;
