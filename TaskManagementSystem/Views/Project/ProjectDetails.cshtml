@@ -2932,7 +2932,7 @@
                 <tr>
                     <th onclick="sortTable('title')">Task Name</th>
                     <th onclick="sortTable('deadline')">Deadline</th>
-                    <th onclick="sortTable('assignedBy')">Assigned By</th>
+                    <th onclick="sortTable('assignedBy')">Created By</th>
                     <th onclick="sortTable('assignedTo')">Assigned To</th>
                     <th onclick="sortTable('createdDate')">Created Date</th>
                     <th onclick="sortTable('priority')">Priority</th>
@@ -3469,13 +3469,15 @@
             case 'deadline':
                 return task.DueDate ? new Date(task.DueDate) : new Date(0);
             case 'assignedBy':
-                return getAssignedBy(task)?.toLowerCase() || '';
+                if (task.CreatedBy === currentUserId) {
+                    return 'you';
+                }
+                return (task.AssignedByUserName || 'project owner').toLowerCase();
             case 'assignedTo':
                 return getAssignedTo(task)?.toLowerCase() || '';
             case 'createdDate':
                 return task.CreatedDateTime ? new Date(task.CreatedDateTime) : new Date(0);
             case 'priority':
-                // Use PriorityStatus instead of Priority
                 return parseInt(task.PriorityStatus) || 1;
             case 'status':
                 return statusNames[task.ProgressStatus] || '';
@@ -3620,7 +3622,7 @@
                 ${isTaskCreator ? '<div style="font-size: 10px; color: #0079bf;">(Created by you)</div>' : ''}
             </td>
             <td>${formatDueDate(task.DueDate)}</td>
-            <td>${getAssignedBy(task)}</td>
+            <td>${getAssignedBy(task)}</td> <!-- This now returns HTML -->
             <td>
                 <div class="users-container">
                     ${createAssignedToCells(task)}
@@ -3682,7 +3684,29 @@
     }
 
     function getAssignedBy(task) {
-        return task.AssignedByUserName || 'Project Owner';
+        if (task.CreatedBy === currentUserId) {
+            return '<span style="color: #0079bf; font-weight: 500; display: flex; align-items: center; gap: 6px;">' +
+                'You</span>';
+        }
+
+        const userName = task.AssignedByUserName || 'Project Owner';
+        const creatorUser = usersData.find(user => user.Id === task.CreatedBy);
+
+        if (creatorUser) {
+            const colorIndex = (usersData.findIndex(user => user.Id === task.CreatedBy) % 6) + 1;
+            const initials = getUserInitials(creatorUser.UserName);
+
+            return `<div style="display: flex; align-items: center; gap: 6px;">
+                        <div class="table-user-avatar avatar-color-${colorIndex}" style="width: 24px; height: 24px; font-size: 10px;">
+                            ${initials}
+                        </div>
+                        <span>${creatorUser.UserName}</span>
+                    </div>`;
+        }
+
+        return `<span style="display: flex; align-items: center; gap: 6px;">
+                    ${userName}
+                </span>`;
     }
 
     function getAssignedTo(task) {
