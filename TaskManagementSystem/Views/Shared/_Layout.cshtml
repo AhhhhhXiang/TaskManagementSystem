@@ -113,49 +113,49 @@
             min-height: 56px;
         }
 
-        .search-container{
+        .search-container {
             border-color: inherit;
         }
 
-        .search-container .input-group {
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .search-container .input-group-text {
-            background-color: #4a5568 !important;
-            border: 1px solid #4a5568 !important;
-            color: #e2e8f0 !important;
-            border-right: none;
-        }
-
-        .search-container .form-control {
-            background-color: #4a5568 !important;
-            border: 1px solid #4a5568 !important;
-            color: #e2e8f0 !important;
-            border-left: none;
-            border-right: none;
-            box-shadow: none !important;
-        }
-
-        .search-container .btn-outline-secondary {
-            background-color: #4a5568 !important;
-            border: 1px solid #4a5568 !important;
-            color: #e2e8f0 !important;
-            border-left: none;
-            border-radius: 0;
-        }
-
-            .search-container .btn-outline-secondary:hover {
-                background-color: #718096 !important;
-                border-color: #718096 !important;
+            .search-container .input-group {
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                border-radius: 8px;
+                overflow: hidden;
             }
 
-        .search-container .input-group:first-child,
-        .search-container .input-group:last-child {
-            border-radius: 8px;
-        }
+            .search-container .input-group-text {
+                background-color: #4a5568 !important;
+                border: 1px solid #4a5568 !important;
+                color: #e2e8f0 !important;
+                border-right: none;
+            }
+
+            .search-container .form-control {
+                background-color: #4a5568 !important;
+                border: 1px solid #4a5568 !important;
+                color: #e2e8f0 !important;
+                border-left: none;
+                border-right: none;
+                box-shadow: none !important;
+            }
+
+            .search-container .btn-outline-secondary {
+                background-color: #4a5568 !important;
+                border: 1px solid #4a5568 !important;
+                color: #e2e8f0 !important;
+                border-left: none;
+                border-radius: 0;
+            }
+
+                .search-container .btn-outline-secondary:hover {
+                    background-color: #718096 !important;
+                    border-color: #718096 !important;
+                }
+
+            .search-container .input-group:first-child,
+            .search-container .input-group:last-child {
+                border-radius: 8px;
+            }
 
         .user-avatar {
             width: 32px;
@@ -182,17 +182,17 @@
                         @*  To do Search bar
                         @if (User.Identity.IsAuthenticated)
                         {
-                            <div class="search-container" style="max-width: 500px; width: 100%;">
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="bi bi-search"></i>
-                                    </span>
-                                    <input type="text" class="form-control" placeholder="Search tasks, projects..." id="navbar-search">
-                                    <button class="btn btn-outline-secondary" type="button" id="search-clear" style="display: none;">
-                                        <i class="bi bi-x"></i>
-                                    </button>
-                                </div>
-                            </div>
+                        <div class="search-container" style="max-width: 500px; width: 100%;">
+                        <div class="input-group">
+                        <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control" placeholder="Search tasks, projects..." id="navbar-search">
+                        <button class="btn btn-outline-secondary" type="button" id="search-clear" style="display: none;">
+                        <i class="bi bi-x"></i>
+                        </button>
+                        </div>
+                        </div>
                         } *@
                     </div>
 
@@ -207,6 +207,16 @@
                                     <span class="me-1 fw-bold">@User.Identity.Name</span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end dark-dropdown" aria-labelledby="navbarDropdown">
+                                    <!-- Add Manage Users link for Administrators -->
+                                    @if (User.IsInRole("Administrator"))
+                                    {
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="User" asp-action="Index">
+                                                <i class="bi bi-people me-2"></i>Manage Users
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                    }
                                     <li>
                                         <form class="d-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post">
                                             <button type="submit" class="dropdown-item">
