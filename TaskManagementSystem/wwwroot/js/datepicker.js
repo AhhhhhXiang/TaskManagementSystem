@@ -20,7 +20,6 @@ function initCustomDatePickers() {
                 openDatePicker(this);
             }
 
-            // Reset the flag after click events are processed
             setTimeout(() => {
                 ignoreNextClick = false;
             }, 300);
@@ -120,7 +119,6 @@ function openDatePicker(input) {
     datePicker.style.display = 'block';
     datePicker.style.zIndex = '10003';
 
-    // Critical: Prevent any outside clicks from affecting the datepicker
     datePicker.addEventListener('mousedown', function (e) {
         e.stopPropagation();
         e.preventDefault();
@@ -158,7 +156,6 @@ function parseDisplayDate(displayDate) {
             return null;
         }
 
-        // Create date in local timezone to avoid UTC issues
         return new Date(year, month, day);
     } catch (error) {
         console.error('Error parsing display date:', error);
@@ -401,7 +398,6 @@ function navigateMonth(direction) {
 function selectDate(day) {
     if (!currentDatePicker || !currentDateInput) return;
 
-    // Create date in local timezone to avoid UTC conversion issues
     const selectedDate = new Date(
         currentViewDate.getFullYear(),
         currentViewDate.getMonth(),
@@ -412,7 +408,6 @@ function selectDate(day) {
         return;
     }
 
-    // Format date as dd MMM yyyy using local date
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
     const dayFormatted = String(selectedDate.getDate()).padStart(2, '0');
@@ -427,9 +422,8 @@ function selectDate(day) {
 
     // Handle different contexts
     if (currentDateInput.id === 'addTaskDueDate') {
-        // For add task modal - update the newTaskData with ISO format
+        // For add task modal - update the newTaskData
         if (typeof newTaskData !== 'undefined') {
-            // Store in ISO format (yyyy-mm-dd) for server
             const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${dayFormatted}`;
             newTaskData.dueDate = isoDate;
             if (typeof updateAddTaskUI !== 'undefined') {
@@ -437,7 +431,7 @@ function selectDate(day) {
             }
         }
     } else if (currentDateInput.id === 'dueDateDisplayInput') {
-        // For edit task modal - save to server with ISO format
+        // For edit task modal - save to server
         if (typeof saveDueDateToServer !== 'undefined' && currentTask) {
             const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${dayFormatted}`;
             saveDueDateToServer(isoDate);
@@ -550,14 +544,11 @@ function clearAllDates() {
 document.addEventListener('DOMContentLoaded', function () {
     initCustomDatePickers();
 
-    // Convert any existing ISO dates from server to display format
     const dateInputs = document.querySelectorAll('.date-text-input');
     dateInputs.forEach(input => {
-        // Check if the value is in ISO format (from server)
         if (input.value && input.value.match(/^\d{4}-\d{2}-\d{2}$/)) {
             input.value = formatDateForDisplay(input.value);
         }
-        // If it's already in display format or empty, leave it as is
     });
 
     // Initialize clear button visibility

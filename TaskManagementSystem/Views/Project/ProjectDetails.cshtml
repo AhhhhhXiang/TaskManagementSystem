@@ -3689,7 +3689,6 @@
         <text>statusNames[@((int)status)] = "@displayName";</text>
     }
 
-        // Server-side filtering and pagination state
         let currentFilters = {
             taskName: '@Html.Raw(Model.TaskFilter.TaskName)',
             taskMemberName: '@Html.Raw(Model.TaskFilter.TaskMemberName)',
@@ -3702,32 +3701,28 @@
             taskPageSize: @Model.TaskFilter.TaskPageSize
         };
 
-    // Debounce function for search
     let debounceTimer;
     function debounce(func, delay) {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(func, delay);
     }
 
-    // Apply filters and reload page with new parameters
+    // Apply filters
     function applyFilters() {
         const projectId = '@Model.project.Id';
         const params = new URLSearchParams();
 
-        // Get current filter values
         currentFilters.taskName = document.getElementById('taskNameFilter').value;
         currentFilters.taskMemberName = document.getElementById('memberFilter').value;
         currentFilters.taskPriority = document.getElementById('priorityFilter').value;
 
-        // Handle date format conversion for filters
         const startDateDisplay = document.getElementById('startDateFilter').value;
         const endDateDisplay = document.getElementById('endDateFilter').value;
 
-        // Convert from dd MMM yyyy to yyyy-MM-dd for server
         currentFilters.taskStartDate = convertDisplayDateToISO(startDateDisplay);
         currentFilters.taskEndDate = convertDisplayDateToISO(endDateDisplay);
 
-        // Add filters to URL parameters
+        // Add filters
         if (currentFilters.taskName) params.append('taskName', currentFilters.taskName);
         if (currentFilters.taskMemberName) params.append('taskMemberName', currentFilters.taskMemberName);
         if (currentFilters.taskPriority) params.append('taskPriority', currentFilters.taskPriority);
@@ -3738,7 +3733,6 @@
         params.append('taskSortBy', currentFilters.taskSortBy);
         params.append('taskSortOrder', currentFilters.taskSortOrder);
 
-        // Reset to page 1 when filters change
         params.append('taskPage', '1');
         params.append('taskPageSize', currentFilters.taskPageSize.toString());
 
@@ -3754,7 +3748,7 @@
         };
 
         const parts = displayDate.split(' ');
-        if (parts.length !== 3) return displayDate; // fallback
+        if (parts.length !== 3) return displayDate;
 
         const day = parts[0].padStart(2, '0');
         const month = monthMap[parts[1]];
@@ -3773,7 +3767,6 @@
         const projectId = '@Model.project.Id';
         const params = new URLSearchParams(window.location.search);
 
-        // Toggle sort order if same field, otherwise default to asc
         if (currentFilters.taskSortBy === field) {
             currentFilters.taskSortOrder = currentFilters.taskSortOrder === 'asc' ? 'desc' : 'asc';
         } else {
@@ -3815,7 +3808,6 @@
         document.getElementById('startDateFilter').value = '';
         document.getElementById('endDateFilter').value = '';
 
-        // Reset to default sorting
         currentFilters.taskSortBy = 'createddatetime';
         currentFilters.taskSortOrder = 'desc';
 
@@ -3903,7 +3895,7 @@
                     ${createAssignedToCells(task)}
                 </div>
             </td>
-            <td>${formatDateForDisplay(task.CreatedDateTime)}</td> <!-- Fixed: Use formatDateForDisplay -->
+            <td>${formatDateForDisplay(task.CreatedDateTime)}</td>
             <td>${createPriorityBadge(task.PriorityStatus)}</td>
             <td>${createStatusBadge(task.ProgressStatus)}</td>
             <td class="comments-cell">
@@ -6414,9 +6406,6 @@
             exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Exporting...';
             exportBtn.disabled = true;
 
-            console.log('Starting CSV export for project:', projectId);
-
-            // Fetch all tasks from the server using GET
             const allTasks = await fetchAllTasksFromServer(projectId);
 
             if (!allTasks || allTasks.length === 0) {
@@ -6426,13 +6415,10 @@
             }
 
             // Generate CSV
-            console.log(allTasks);
             const csvContent = generateCSVContent(allTasks);
 
-            // Trigger download
             downloadCSV(csvContent, filename);
 
-            // Reset button
             resetExportButton(exportBtn, originalText);
 
         } catch (error) {
@@ -6463,9 +6449,8 @@
         }
     }
 
-    // Generate CSV content from tasks (updated for your API response structure)
+    // Generate CSV content from tasks
     function generateCSVContent(tasks) {
-        // Define CSV headers
         const headers = [
             'Task Name',
             'Description',
@@ -6509,23 +6494,19 @@
         link.click();
         document.body.removeChild(link);
 
-        // Clean up URL
         setTimeout(() => URL.revokeObjectURL(url), 100);
     }
 
-    // Helper function to reset export button
     function resetExportButton(button, originalText) {
         button.innerHTML = originalText;
         button.disabled = false;
     }
 
-    // Helper function to escape CSV fields
     function escapeCsvField(field) {
         if (field === null || field === undefined) return '';
 
         const stringField = String(field);
 
-        // Escape quotes and wrap in quotes if contains comma, newline, or quote
         if (stringField.includes(',') || stringField.includes('\n') || stringField.includes('"')) {
             return '"' + stringField.replace(/"/g, '""') + '"';
         }
@@ -6533,7 +6514,6 @@
         return stringField;
     }
 
-    // Helper function to format date for CSV
     function formatDateForCSV(dateString) {
         if (!dateString) return '';
 
@@ -6548,20 +6528,16 @@
         return `${year}-${month}-${day}`;
     }
 
-    // Helper function to get created by display
     function getCreatedByDisplay(task) {
         if (task.CreatedBy === currentUserId) {
             return 'You';
         }
 
-        // Since we don't have user data in the API response, we'll use what we have
         const creatorUser = usersData.find(user => user.Id === task.CreatedBy);
         return creatorUser ? creatorUser.UserName : (task.CreatedBy || 'Unknown');
     }
 
-    // Helper function to get priority display - updated for PriorityStatus enum
     function getPriorityDisplay(priorityStatus) {
-        // PriorityStatus is an enum, so we need to handle both string and number values
         const priorityValue = typeof priorityStatus === 'string' ? priorityStatus : String(priorityStatus);
 
         const priorityMap = {
@@ -6576,9 +6552,7 @@
         return priorityMap[priorityValue] || 'Low';
     }
 
-    // Helper function to get status display - updated for TaskStatus enum
     function getStatusDisplay(progressStatus) {
-        // TaskStatus is an enum, so we need to handle both string and number values
         const statusValue = typeof progressStatus === 'string' ? parseInt(progressStatus) : progressStatus;
 
         return statusNames[statusValue] || 'Unknown';

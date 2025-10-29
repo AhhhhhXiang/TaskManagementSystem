@@ -34,7 +34,6 @@ public class ProjectController : Controller
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        // Build URL with all filter parameters
         var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/Project?page={page}&pageSize=14&modules=ProjectUser&modules=Tasks&modules=TaskUser";
 
         if (!string.IsNullOrEmpty(projectName))
@@ -77,7 +76,6 @@ public class ProjectController : Controller
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            // Call your API to get ALL projects without pagination
             var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/Project?page=1&pageSize=10000&modules=ProjectUser&modules=Tasks&modules=TaskUser";
 
             var response = await client.GetAsync(apiUrl);
@@ -93,10 +91,8 @@ public class ProjectController : Controller
                 return Json(new { success = false, message = "No projects found to export." });
             }
 
-            // Generate simplified CSV content
             var csvContent = GenerateSimplifiedProjectsCSV(apiResponse.projects);
 
-            // Return CSV file
             var timestamp = DateTime.Now.ToString("yyyyMMdd");
             var filename = $"projects_export_{timestamp}.csv";
 
@@ -112,13 +108,10 @@ public class ProjectController : Controller
     {
         var csv = new StringBuilder();
 
-        // Add simplified headers - only the requested columns
         csv.AppendLine("Project Name,Tasks,Task Priorities,Task Deadlines,Members");
 
-        // Add data rows
         foreach (var project in projects)
         {
-            // Extract all task information
             var allTaskNames = new List<string>();
             var allTaskPriorities = new List<string>();
             var allTaskDeadlines = new List<string>();
@@ -133,7 +126,6 @@ public class ProjectController : Controller
                 }
             }
 
-            // Extract all member names
             var allMemberNames = new List<string>();
             if (project.projectUsers != null)
             {
@@ -142,7 +134,6 @@ public class ProjectController : Controller
                     .Select(pu => pu.UserName));
             }
 
-            // Join arrays with semicolons for CSV
             var tasksString = string.Join("; ", allTaskNames);
             var prioritiesString = string.Join("; ", allTaskPriorities);
             var deadlinesString = string.Join("; ", allTaskDeadlines);
@@ -163,7 +154,6 @@ public class ProjectController : Controller
     private string EscapeCsvField(string field)
     {
         if (string.IsNullOrEmpty(field)) return "";
-        // Escape quotes by doubling them
         return field.Replace("\"", "\"\"");
     }
 
@@ -391,7 +381,6 @@ public class ProjectController : Controller
 
             var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/ProjectTask";
 
-            // Parse inputs
             DateTime? parsedDueDate = null;
             if (!string.IsNullOrEmpty(dueDate) && DateTime.TryParse(dueDate, out DateTime tempDueDate))
             {
@@ -400,7 +389,7 @@ public class ProjectController : Controller
 
             if (!int.TryParse(priorityStatus, out int priority) || priority < 1 || priority > 3)
             {
-                priority = 1; // Default to Low priority
+                priority = 1;
             }
 
             // Create the task first

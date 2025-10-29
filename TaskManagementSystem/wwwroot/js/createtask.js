@@ -4,7 +4,7 @@ let newTaskData = {
     title: '',
     description: '',
     priority: '1',
-    status: 1, // Default to "To Do"
+    status: 1,
     dueDate: '',
     assigneeIds: []
 };
@@ -168,7 +168,6 @@ window.selectDate = function (day) {
         day
     );
 
-    // Format date as dd MMM yyyy using local date
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
     const dayFormatted = String(selectedDate.getDate()).padStart(2, '0');
@@ -183,7 +182,6 @@ window.selectDate = function (day) {
 
     // Handle add task modal date selection
     if (currentDateInput.id === 'addTaskDueDate') {
-        // Store in ISO format but display in dd MMM yyyy
         const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${dayFormatted}`;
         newTaskData.dueDate = isoDate;
         updateAddTaskUI();
