@@ -6406,7 +6406,11 @@
             exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Exporting...';
             exportBtn.disabled = true;
 
-            const allTasks = await fetchAllTasksFromServer(projectId);
+            // Get current filter values
+            const currentFilters = getCurrentFilterValues();
+
+            // Fetch filtered tasks from server
+            const allTasks = await fetchFilteredTasksFromServer(projectId, currentFilters);
 
             if (!allTasks || allTasks.length === 0) {
                 alert('No tasks found to export');
@@ -6428,9 +6432,36 @@
         }
     }
 
-    async function fetchAllTasksFromServer(projectId) {
+    function getCurrentFilterValues() {
+        return {
+            taskName: document.getElementById('taskNameFilter').value,
+            taskMemberName: document.getElementById('memberFilter').value,
+            taskPriority: document.getElementById('priorityFilter').value,
+            taskStartDate: convertDisplayDateToISO(document.getElementById('startDateFilter').value),
+            taskEndDate: convertDisplayDateToISO(document.getElementById('endDateFilter').value),
+            taskSortBy: '@Model.TaskFilter.TaskSortBy',
+            taskSortOrder: '@Model.TaskFilter.TaskSortOrder'
+        };
+    }
+
+    async function fetchFilteredTasksFromServer(projectId, filters) {
         try {
-            const response = await fetch(`/Project/GetAllProjectTasks?projectId=${encodeURIComponent(projectId)}`);
+            // Build query string with current filters
+            const params = new URLSearchParams();
+
+            if (filters.taskName) params.append('taskName', filters.taskName);
+            if (filters.taskMemberName) params.append('taskMemberName', filters.taskMemberName);
+            if (filters.taskPriority) params.append('taskPriority', filters.taskPriority);
+            if (filters.taskStartDate) params.append('taskStartDate', filters.taskStartDate);
+            if (filters.taskEndDate) params.append('taskEndDate', filters.taskEndDate);
+            if (filters.taskSortBy) params.append('taskSortBy', filters.taskSortBy);
+            if (filters.taskSortOrder) params.append('taskSortOrder', filters.taskSortOrder);
+
+            // Add parameters for export (no pagination, all results)
+            params.append('export', 'true');
+            params.append('taskPageSize', '10000'); // Large number to get all filtered results
+
+            const response = await fetch(`/Project/GetAllProjectTasks?projectId=${encodeURIComponent(projectId)}&${params.toString()}`);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -6444,7 +6475,7 @@
                 throw new Error(data.message || 'Failed to fetch tasks');
             }
         } catch (error) {
-            console.error('Error fetching all tasks:', error);
+            console.error('Error fetching filtered tasks:', error);
             throw error;
         }
     }

@@ -1449,46 +1449,73 @@ public class ProjectController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllProjectTasks(string projectId)
+    public async Task<IActionResult> GetAllProjectTasks(Guid projectId,
+    [FromQuery] string? taskName = null,
+    [FromQuery] DateTime? taskStartDate = null,
+    [FromQuery] DateTime? taskEndDate = null,
+    [FromQuery] string? taskPriority = null,
+    [FromQuery] string? taskMemberName = null,
+    [FromQuery] string? taskSortBy = "Title",
+    [FromQuery] string? taskSortOrder = "asc",
+    [FromQuery] int taskPage = 1,
+    [FromQuery] int taskPageSize = 10,
+    [FromQuery] bool export = false)
     {
-        try
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Unauthorized();
+
+        var token = await GenerateJwtToken(user);
+
+        using var client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var apiUrlBuilder = new StringBuilder($"{_configuration["APIURL"].TrimEnd('/')}/api/Project/{projectId}");
+        apiUrlBuilder.Append("?modules=ProjectUser&modules=Tasks&modules=TaskAttachment&modules=TaskUser&modules=TaskComment");
+
+        if (!string.IsNullOrEmpty(taskName))
+            apiUrlBuilder.Append($"&taskName={Uri.EscapeDataString(taskName)}");
+
+        if (taskStartDate.HasValue)
+            apiUrlBuilder.Append($"&taskStartDate={taskStartDate.Value:yyyy-MM-dd}");
+
+        if (taskEndDate.HasValue)
+            apiUrlBuilder.Append($"&taskEndDate={taskEndDate.Value:yyyy-MM-dd}");
+
+        if (!string.IsNullOrEmpty(taskPriority))
+            apiUrlBuilder.Append($"&taskPriority={Uri.EscapeDataString(taskPriority)}");
+
+        if (!string.IsNullOrEmpty(taskMemberName))
+            apiUrlBuilder.Append($"&taskMemberName={Uri.EscapeDataString(taskMemberName)}");
+
+        if (export)
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Json(new { success = false, message = "User not found." });
-
-            if (string.IsNullOrWhiteSpace(projectId))
-                return Json(new { success = false, message = "Project ID is required." });
-
-            var token = await GenerateJwtToken(user);
-
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/ProjectTask?projectId={projectId}";
-
-            var response = await client.GetAsync(apiUrl);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorText = await response.Content.ReadAsStringAsync();
-                return Json(new { success = false, message = $"API error: {errorText}" });
-            }
-
-            var tasksJson = await response.Content.ReadAsStringAsync();
-
-            var apiResponse = JsonSerializer.Deserialize<GetAllProjectTasksResponse>(tasksJson, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
-            var tasks = apiResponse?.projectTasks ?? new List<ProjectTasksResponse>();
-
-            return Json(new { success = true, tasks = tasks });
+            apiUrlBuilder.Append($"&taskPage=1");
+            apiUrlBuilder.Append($"&taskPageSize=10000");
         }
-        catch (Exception ex)
+        else
         {
-            return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
+            apiUrlBuilder.Append($"&taskPage={taskPage}");
+            apiUrlBuilder.Append($"&taskPageSize={taskPageSize}");
         }
+
+        apiUrlBuilder.Append($"&taskSortBy={Uri.EscapeDataString(taskSortBy)}");
+        apiUrlBuilder.Append($"&taskSortOrder={Uri.EscapeDataString(taskSortOrder)}");
+
+        var apiUrl = apiUrlBuilder.ToString();
+        var response = await client.GetAsync(apiUrl);
+
+        if (!response.IsSuccessStatusCode)
+            return Json(new { success = false, message = "Failed to fetch tasks" });
+
+        var getProjectResponse = await response.Content.ReadFromJsonAsync<GetProjectResponse>();
+        if (getProjectResponse?.project?.projectTasks == null)
+            return Json(new { success = false, message = "No tasks found" });
+
+        return Json(new
+        {
+            success = true,
+            tasks = getProjectResponse.project.projectTasks,
+            totalCount = getProjectResponse.project.TotalTaskCount
+        });
     }
 }
