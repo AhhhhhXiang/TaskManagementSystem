@@ -6,6 +6,7 @@ using TaskManagementAPI.Models.Project;
 using TaskManagement.Data.Migrations.Models;
 using TaskManagement.Core.Repository;
 using TaskManagement.Core.Repository.Models;
+using System.Linq;
 
 namespace TaskManagementAPI.Controllers
 {
@@ -131,7 +132,6 @@ namespace TaskManagementAPI.Controllers
                                 var taskReturnModel = new ProjectTaskReturnModel
                                 {
                                     Id = task.Id,
-                                    ProjectId = task.ProjectId,
                                     Title = task.Title,
                                     Description = task.Description,
                                     StartDate = task.StartDate,
@@ -274,98 +274,174 @@ namespace TaskManagementAPI.Controllers
             {
                 if (form.modules.Contains("Tasks"))
                 {
-                    var projectTasks = _client.ProjectTaskRepository
+                    var tasksQuery = _client.ProjectTaskRepository
                         .GetAll()
                         .Where(pt => pt.ProjectId == project.Id)
-                        .Select(pt =>
+                        .AsQueryable();
+
+                    if (!string.IsNullOrEmpty(form.taskName))
+                    {
+                        tasksQuery = tasksQuery.Where(t => t.Title.ToLower().Contains(form.taskName.ToLower()));
+                    }
+
+                    if (form.taskStartDate.HasValue)
+                    {
+                        tasksQuery = tasksQuery.Where(t => t.DueDate >= form.taskStartDate.Value);
+                    }
+
+                    if (form.taskEndDate.HasValue)
+                    {
+                        tasksQuery = tasksQuery.Where(t => t.DueDate <= form.taskEndDate.Value);
+                    }
+
+                    if (!string.IsNullOrEmpty(form.taskPriority))
+                    {
+                        tasksQuery = tasksQuery.Where(t => t.priorityStatus.ToString().ToLower() == form.taskPriority.ToLower());
+                    }
+
+                    if (!string.IsNullOrEmpty(form.taskMemberName))
+                    {
+                        var lowerTaskMemberName = form.taskMemberName.ToLower();
+                        var taskIdsByMember = _client.TaskUserRepository
+                            .GetAll()
+                            .Where(tu => _userManager.Users
+                                .Any(u => u.Id == tu.UserId.ToString() &&
+                                         (u.UserName.ToLower().Contains(lowerTaskMemberName) ||
+                                          u.Email.ToLower().Contains(lowerTaskMemberName))))
+                            .Select(tu => tu.TaskId)
+                            .Distinct()
+                            .ToList();
+
+                        tasksQuery = tasksQuery.Where(t => taskIdsByMember.Contains(t.Id));
+                    }
+
+                    if (!string.IsNullOrEmpty(form.taskSortBy))
+                    {
+                        var isTaskDescending = form.taskSortOrder?.ToLower() == "desc";
+                        tasksQuery = form.taskSortBy.ToLower() switch
                         {
-                            var task = _client.ProjectTaskRepository.GetById(pt.Id);
-                            if (task == null) return null;
+                            "title" => isTaskDescending ?
+                                tasksQuery.OrderByDescending(t => t.Title) :
+                                tasksQuery.OrderBy(t => t.Title),
+                            "duedate" => isTaskDescending ?
+                                tasksQuery.OrderByDescending(t => t.DueDate) :
+                                tasksQuery.OrderBy(t => t.DueDate),
+                            "progressstatus" => isTaskDescending ?
+                                tasksQuery.OrderByDescending(t => t.ProgressStatus) :
+                                tasksQuery.OrderBy(t => t.ProgressStatus),
+                            "prioritystatus" => isTaskDescending ?
+                                tasksQuery.OrderByDescending(t => t.priorityStatus) :
+                                tasksQuery.OrderBy(t => t.priorityStatus),
+                            "createddatetime" => isTaskDescending ?
+                                tasksQuery.OrderByDescending(t => t.CreatedDateTime) :
+                                tasksQuery.OrderBy(t => t.CreatedDateTime),
+                            _ => tasksQuery.OrderBy(t => t.Title)
+                        };
+                    }
+                    else
+                    {
+                        tasksQuery = tasksQuery.OrderBy(t => t.Title);
+                    }
 
-                            var taskReturnModel = new ProjectTaskReturnModel
+                    int taskPage = form.taskPage > 0 ? form.taskPage : 1;
+                    int taskPageSize = form.taskPageSize > 0 ? form.taskPageSize : 10;
+
+                    var totalTaskCount = tasksQuery.Count();
+                    var pagedTasks = tasksQuery
+                        .Skip((taskPage - 1) * taskPageSize)
+                        .Take(taskPageSize)
+                        .ToList();
+
+                    var projectTasks = pagedTasks.Select(task =>
+                    {
+                        var taskReturnModel = new ProjectTaskReturnModel
+                        {
+                            Id = task.Id,
+                            Title = task.Title,
+                            Description = task.Description,
+                            StartDate = task.StartDate,
+                            DueDate = task.DueDate,
+                            ProgressStatus = task.ProgressStatus,
+                            PriorityStatus = task.priorityStatus,
+                            CreatedBy = task.CreatedBy,
+                            CreatedDateTime = task.CreatedDateTime,
+                            TotalTaskCount = totalTaskCount,
+                            TaskPage = taskPage,
+                            TaskPageSize = taskPageSize
+                        };
+
+                        if (form.modules.Contains("TaskUser"))
+                        {
+                            var taskUsers = new List<UserReturnModel>();
+                            var taskUserLinks = _client.TaskUserRepository
+                                .GetAll()
+                                .Where(tu => tu.TaskId == task.Id)
+                                .ToList();
+
+                            foreach (var tu in taskUserLinks)
                             {
-                                Id = task.Id,
-                                Title = task.Title,
-                                Description = task.Description,
-                                StartDate = task.StartDate,
-                                DueDate = task.DueDate,
-                                ProgressStatus = task.ProgressStatus,
-                                PriorityStatus = task.priorityStatus,
-                                CreatedBy = task.CreatedBy,
-                                CreatedDateTime = task.CreatedDateTime
-                            };
-
-                            if (form.modules.Contains("TaskUser"))
-                            {
-                                var taskUsers = new List<UserReturnModel>();
-                                var taskUserLinks = _client.TaskUserRepository
-                                    .GetAll()
-                                    .Where(tu => tu.TaskId == task.Id)
-                                    .ToList();
-
-                                foreach (var tu in taskUserLinks)
+                                var user = _userManager.FindByIdAsync(tu.UserId.ToString()).Result;
+                                if (user != null)
                                 {
-                                    var user = _userManager.FindByIdAsync(tu.UserId.ToString()).Result;
-                                    if (user != null)
+                                    taskUsers.Add(new UserReturnModel
                                     {
-                                        taskUsers.Add(new UserReturnModel
-                                        {
-                                            Id = Guid.Parse(user.Id),
-                                            UserName = user.UserName ?? "Unknown",
-                                            Email = user.Email ?? "No email",
-                                        });
-                                    }
+                                        Id = Guid.Parse(user.Id),
+                                        UserName = user.UserName ?? "Unknown",
+                                        Email = user.Email ?? "No email",
+                                    });
                                 }
-                                taskReturnModel.taskUsers = taskUsers;
                             }
+                            taskReturnModel.taskUsers = taskUsers;
+                        }
 
-                            if (form.modules.Contains("TaskAttachment"))
-                            {
-                                var taskAttachments = _client.TaskAttachmentRepository
-                                    .GetAll()
-                                    .Where(ta => ta.TaskId == task.Id)
-                                    .Select(ta => new TaskAttachmentReturnModel
+                        if (form.modules.Contains("TaskAttachment"))
+                        {
+                            var taskAttachments = _client.TaskAttachmentRepository
+                                .GetAll()
+                                .Where(ta => ta.TaskId == task.Id)
+                                .Select(ta => new TaskAttachmentReturnModel
+                                {
+                                    Id = ta.Id,
+                                    TaskId = ta.TaskId,
+                                    FileName = ta.FileName,
+                                    FilePath = Url.ActionLink(action: "GetAttachment", controller: "Attachment") + "?attachmentId=" + ta.Id,
+                                })
+                                .ToList();
+
+                            taskReturnModel.taskAttachments = taskAttachments;
+                        }
+
+                        if (form.modules.Contains("TaskComment"))
+                        {
+                            var taskComments = _client.TaskCommentRepository
+                                .GetAll()
+                                .Where(ta => ta.TaskId == task.Id)
+                                .ToList()
+                                .Select(ta =>
+                                {
+                                    var user = _userManager.FindByIdAsync(ta.UserId.ToString()).Result;
+                                    return new TaskCommentReturnModel
                                     {
                                         Id = ta.Id,
                                         TaskId = ta.TaskId,
-                                        FileName = ta.FileName,
-                                        FilePath = Url.ActionLink(action: "GetAttachment", controller: "Attachment") + "?attachmentId=" + ta.Id,
-                                    })
-                                    .ToList();
+                                        UserId = ta.UserId,
+                                        Username = user?.UserName ?? "Unknown",
+                                        Comment = ta.Comment,
+                                        CreatedDateTime = ta.CreatedDateTime
+                                    };
+                                })
+                                .ToList();
 
-                                taskReturnModel.taskAttachments = taskAttachments;
-                            }
+                            taskReturnModel.taskComments = taskComments;
+                        }
 
-                            if (form.modules.Contains("TaskComment"))
-                            {
-                                var taskComments = _client.TaskCommentRepository
-                                    .GetAll()
-                                    .Where(ta => ta.TaskId == task.Id)
-                                    .ToList()
-                                    .Select(ta =>
-                                    {
-                                        var user = _userManager.FindByIdAsync(ta.UserId.ToString()).Result;
-                                        return new TaskCommentReturnModel
-                                        {
-                                            Id = ta.Id,
-                                            TaskId = ta.TaskId,
-                                            UserId = ta.UserId,
-                                            Username = user?.UserName ?? "Unknown",
-                                            Comment = ta.Comment,
-                                            CreatedDateTime = ta.CreatedDateTime
-                                        };
-                                    })
-                                    .ToList();
+                        return taskReturnModel;
+                    }).ToList();
 
-                                taskReturnModel.taskComments = taskComments;
-                            }
-
-                            return taskReturnModel;
-                        })
-                        .Where(t => t != null)
-                        .ToList();
-
-                    projectResponse.projectTasks = projectTasks!;
+                    projectResponse.projectTasks = projectTasks;
+                    projectResponse.TotalTaskCount = totalTaskCount;
+                    projectResponse.TaskPage = taskPage;
+                    projectResponse.TaskPageSize = taskPageSize;
                 }
 
                 if (form.modules.Contains("ProjectUser"))

@@ -4,7 +4,7 @@ let newTaskData = {
     title: '',
     description: '',
     priority: '1',
-    status: 1, // Default to "To Do"
+    status: 1,
     dueDate: '',
     assigneeIds: []
 };
@@ -117,11 +117,12 @@ function updateAddTaskUI() {
         statusBtn.innerHTML = `<i class="bi bi-columns sidebar-icon"></i><span>Status: ${statusName}</span>`;
     }
 
-    // Update due date display
+    // Update due date display - use the new format
     const dueDateInput = document.getElementById('addTaskDueDate');
     if (dueDateInput) {
         if (newTaskData.dueDate) {
-            dueDateInput.value = newTaskData.dueDate;
+            // Format the due date using the new format function
+            dueDateInput.value = formatDateForDisplay(newTaskData.dueDate);
             dueDateInput.placeholder = '';
         } else {
             dueDateInput.value = '';
@@ -161,24 +162,34 @@ const originalSelectDate = window.selectDate;
 window.selectDate = function (day) {
     if (!currentDatePicker || !currentDateInput) return;
 
-    const selectedDate = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth(), day);
+    const selectedDate = new Date(
+        currentViewDate.getFullYear(),
+        currentViewDate.getMonth(),
+        day
+    );
 
     const year = selectedDate.getFullYear();
-    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const month = selectedDate.getMonth();
     const dayFormatted = String(selectedDate.getDate()).padStart(2, '0');
-    const formattedDate = `${year}-${month}-${dayFormatted}`;
+
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    const formattedDate = `${dayFormatted} ${monthNames[month]} ${year}`;
 
     currentDateInput.value = formattedDate;
     updateClearButtonVisibility(currentDateInput);
 
     // Handle add task modal date selection
     if (currentDateInput.id === 'addTaskDueDate') {
-        newTaskData.dueDate = formattedDate;
+        const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${dayFormatted}`;
+        newTaskData.dueDate = isoDate;
         updateAddTaskUI();
     }
     // Handle edit task modal date selection
     else if (currentDateInput.id === 'dueDateDisplayInput' && currentTask) {
-        saveDueDateToServer(formattedDate);
+        const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${dayFormatted}`;
+        saveDueDateToServer(isoDate);
     }
     // Handle filter dates
     else {
@@ -366,7 +377,6 @@ async function createTaskFromModal() {
 
             // Refresh the table view
             filteredTasks = [...tasksData];
-            applySorting();
             applyFilters();
 
             currentPage = 1;

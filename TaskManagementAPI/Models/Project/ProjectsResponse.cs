@@ -12,5 +12,8 @@ namespace TaskManagementAPI.Models.Project
         public string? Description { get; set; }
         public List<ProjectTaskReturnModel>? projectTasks { get; set; }
         public List<ProjectUserReturnModel>? projectUsers { get; set; }
+        public int TotalTaskCount { get; set; }
+        public int TaskPage { get; set; }
+        public int TaskPageSize { get; set; }
     }
 }

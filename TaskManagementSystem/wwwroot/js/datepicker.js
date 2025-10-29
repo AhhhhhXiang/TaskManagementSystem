@@ -2,32 +2,62 @@
 let currentDateInput = null;
 let currentDatePicker = null;
 let currentViewDate = new Date();
+let ignoreNextClick = false;
 
 function initCustomDatePickers() {
     const dateInputs = document.querySelectorAll('.date-text-input');
 
     dateInputs.forEach(input => {
-        input.addEventListener('click', function (e) {
+        input.addEventListener('mousedown', function (e) {
+            e.preventDefault();
             e.stopPropagation();
+
+            ignoreNextClick = true;
 
             if (currentDateInput === this && currentDatePicker) {
                 closeDatePicker();
             } else {
                 openDatePicker(this);
             }
+
+            setTimeout(() => {
+                ignoreNextClick = false;
+            }, 300);
         });
 
-        input.addEventListener('blur', function () {
-            validateDateRange();
+        input.addEventListener('blur', function (e) {
+            setTimeout(() => {
+                if (!currentDatePicker) {
+                    validateDateRange();
+                }
+            }, 200);
         });
 
-        // Initialize clear button visibility
         updateClearButtonVisibility(input);
     });
 
     // Close date picker when clicking outside
-    document.addEventListener('click', function () {
-        closeDatePicker();
+    document.addEventListener('mousedown', function (e) {
+        if (ignoreNextClick) return;
+
+        setTimeout(() => {
+            if (!currentDatePicker) return;
+
+            const isDateInput = e.target.closest('.date-text-input');
+            const isDatePicker = e.target.closest('.date-picker-modal');
+            const isClearButton = e.target.closest('.date-clear-btn');
+            const isCalendarIcon = e.target.closest('.calendar-icon');
+
+            if (!isDateInput && !isDatePicker && !isClearButton && !isCalendarIcon) {
+                closeDatePicker();
+            }
+        }, 50);
+    });
+
+    dateInputs.forEach(input => {
+        input.addEventListener('change', function () {
+            validateDateRange();
+        });
     });
 }
 
@@ -37,9 +67,29 @@ function openDatePicker(input) {
     currentDateInput = input;
 
     const inputValue = input.value;
+
+    // Parse the display format (dd MMM yyyy) or fall back to ISO format
     if (inputValue) {
-        const [year, month, day] = inputValue.split('-').map(Number);
-        currentViewDate = new Date(year, month - 1, day);
+        let parsedDate;
+
+        // Check if it's in display format (dd MMM yyyy)
+        if (inputValue.match(/^\d{2} \w{3} \d{4}$/)) {
+            parsedDate = parseDisplayDate(inputValue);
+        }
+        // Check if it's in ISO format (yyyy-mm-dd)
+        else if (inputValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            parsedDate = new Date(inputValue + 'T00:00:00Z');
+        }
+        // Fallback to current date
+        else {
+            parsedDate = new Date();
+        }
+
+        if (parsedDate && !isNaN(parsedDate.getTime())) {
+            currentViewDate = parsedDate;
+        } else {
+            currentViewDate = new Date();
+        }
     } else {
         currentViewDate = new Date();
     }
@@ -54,14 +104,63 @@ function openDatePicker(input) {
 
     // Position the date picker
     const rect = input.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+
+    let topPosition = rect.bottom + 8;
+    const datePickerHeight = 300;
+
+    if (topPosition + datePickerHeight > viewportHeight - 20) {
+        topPosition = rect.top - datePickerHeight - 8;
+    }
+
     datePicker.style.position = 'fixed';
     datePicker.style.left = rect.left + 'px';
-    datePicker.style.top = (rect.bottom + 8) + 'px';
+    datePicker.style.top = topPosition + 'px';
     datePicker.style.display = 'block';
+    datePicker.style.zIndex = '10003';
+
+    datePicker.addEventListener('mousedown', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        return false;
+    });
+
+    datePicker.addEventListener('click', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        return false;
+    });
 
     currentDatePicker = datePicker;
-
     attachDatePickerEvents();
+}
+
+function parseDisplayDate(displayDate) {
+    if (!displayDate) return null;
+
+    const monthMap = {
+        'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+        'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+    };
+
+    try {
+        const parts = displayDate.split(' ');
+        if (parts.length !== 3) return null;
+
+        const day = parseInt(parts[0], 10);
+        const monthName = parts[1];
+        const year = parseInt(parts[2], 10);
+
+        const month = monthMap[monthName];
+        if (month === undefined || isNaN(day) || isNaN(year)) {
+            return null;
+        }
+
+        return new Date(year, month, day);
+    } catch (error) {
+        console.error('Error parsing display date:', error);
+        return null;
+    }
 }
 
 function closeDatePicker() {
@@ -299,28 +398,34 @@ function navigateMonth(direction) {
 function selectDate(day) {
     if (!currentDatePicker || !currentDateInput) return;
 
-    const selectedDate = new Date(Date.UTC(
+    const selectedDate = new Date(
         currentViewDate.getFullYear(),
         currentViewDate.getMonth(),
         day
-    ));
+    );
 
     if (!validateSelectedDate(selectedDate)) {
         return;
     }
 
-    const year = selectedDate.getUTCFullYear();
-    const month = String(selectedDate.getUTCMonth() + 1).padStart(2, '0');
-    const dayFormatted = String(selectedDate.getUTCDate()).padStart(2, '0');
-    const formattedDate = `${year}-${month}-${dayFormatted}`;
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth();
+    const dayFormatted = String(selectedDate.getDate()).padStart(2, '0');
+
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    const formattedDate = `${dayFormatted} ${monthNames[month]} ${year}`;
 
     currentDateInput.value = formattedDate;
     updateClearButtonVisibility(currentDateInput);
 
+    // Handle different contexts
     if (currentDateInput.id === 'addTaskDueDate') {
         // For add task modal - update the newTaskData
         if (typeof newTaskData !== 'undefined') {
-            newTaskData.dueDate = formattedDate;
+            const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${dayFormatted}`;
+            newTaskData.dueDate = isoDate;
             if (typeof updateAddTaskUI !== 'undefined') {
                 updateAddTaskUI();
             }
@@ -328,10 +433,14 @@ function selectDate(day) {
     } else if (currentDateInput.id === 'dueDateDisplayInput') {
         // For edit task modal - save to server
         if (typeof saveDueDateToServer !== 'undefined' && currentTask) {
-            saveDueDateToServer(formattedDate);
+            const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${dayFormatted}`;
+            saveDueDateToServer(isoDate);
         }
     } else {
-        applyFilters();
+        // For filter dates
+        setTimeout(() => {
+            applyFilters();
+        }, 100);
     }
 
     closeDatePicker();
@@ -401,7 +510,10 @@ function clearDate(inputId) {
                 saveDueDateToServer('');
             }
         } else {
-            applyFilters();
+            // For filter inputs
+            setTimeout(() => {
+                applyFilters();
+            }, 100);
         }
 
         if (currentDateInput && currentDateInput.id === inputId) {
@@ -429,7 +541,18 @@ function clearAllDates() {
     clearDate('endDateFilter');
 }
 
-// Initialize when page loads
 document.addEventListener('DOMContentLoaded', function () {
     initCustomDatePickers();
+
+    const dateInputs = document.querySelectorAll('.date-text-input');
+    dateInputs.forEach(input => {
+        if (input.value && input.value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            input.value = formatDateForDisplay(input.value);
+        }
+    });
+
+    // Initialize clear button visibility
+    dateInputs.forEach(input => {
+        updateClearButtonVisibility(input);
+    });
 });

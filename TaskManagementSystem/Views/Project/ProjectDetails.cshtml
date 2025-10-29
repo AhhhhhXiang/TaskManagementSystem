@@ -2808,7 +2808,7 @@
     </div>
 </div>
 
-<!-- Project Management -->
+<!-- Project Management Modals -->
 <!-- Add Member to Project Modal -->
 <div class="modal-overlay" id="addMemberModal" onclick="closeAddMemberModal()">
     <div class="add-member-modal" onclick="event.stopPropagation()">
@@ -2888,40 +2888,84 @@
             <button class="btn-add-task" onclick="openAddTaskModal()">
                 <i class="bi bi-plus-lg"></i> Add New Task
             </button>
+            <button class="btn-add-task" onclick="exportTasksToCSV()" style="background-color: #28a745;">
+                <i class="bi bi-file-earmark-spreadsheet"></i> Export as CSV
+            </button>
         </div>
 
+        <!-- Enhanced Filter Controls -->
         <div class="filter-controls">
-            <select class="filter-select" id="memberFilter" onchange="applyFilters()">
-                <option value="">All Members</option>
-                @if (Model?.project?.projectUsers != null)
-                {
-                    foreach (var user in Model.project.projectUsers)
+            <!-- Task Name Filter -->
+            <div class="filter-group">
+                <div class="filter-label">Task Name</div>
+                <input type="text" class="search-box" id="taskNameFilter" placeholder="Search tasks..."
+                       value="@Model.TaskFilter.TaskName" onkeyup="debounce(applyFilters, 300)">
+            </div>
+
+            <!-- Member Filter -->
+            <div class="filter-group">
+                <div class="filter-label">Member</div>
+                <select class="filter-select" id="memberFilter" onchange="applyFilters()">
+                    <option value="">All Members</option>
+                    @if (Model?.project?.projectUsers != null)
                     {
-                        <option value="@user.Id">@user.UserName</option>
+                        foreach (var user in Model.project.projectUsers)
+                        {
+                            <option value="@user.UserName" selected="@(Model.TaskFilter.TaskMemberName == user.UserName)">@user.UserName</option>
+                        }
                     }
-                }
-            </select>
+                </select>
+            </div>
 
-            <select class="filter-select" id="priorityFilter" onchange="applyFilters()">
-                <option value="">All Priorities</option>
-                <option value="3">High</option>
-                <option value="2">Medium</option>
-                <option value="1">Low</option>
-            </select>
+            <!-- Priority Filter -->
+            <div class="filter-group">
+                <div class="filter-label">Priority</div>
+                <select class="filter-select" id="priorityFilter" onchange="applyFilters()">
+                    <option value="">All Priorities</option>
+                    <option value="High" selected="@(Model.TaskFilter.TaskPriority == "High")">High</option>
+                    <option value="Medium" selected="@(Model.TaskFilter.TaskPriority == "Medium")">Medium</option>
+                    <option value="Low" selected="@(Model.TaskFilter.TaskPriority == "Low")">Low</option>
+                </select>
+            </div>
 
-            <div class="date-filter">
+            <!-- Date Range Filter -->
+            <div class="filter-group">
+                <div class="filter-label">Start Date</div>
                 <div class="date-input-wrapper">
-                    <input type="text" class="date-text-input" id="startDateFilter" placeholder="From date" readonly>
+                    <input type="text" class="date-text-input" id="startDateFilter"
+                           placeholder="Start date"
+                           value="@(Model.TaskFilter.TaskStartDate?.ToString("yyyy-MM-dd"))"
+                           readonly>
                     <i class="bi bi-calendar calendar-icon"></i>
-                </div>
-                <span style="color: #9fadbc;">to</span>
-                <div class="date-input-wrapper">
-                    <input type="text" class="date-text-input" id="endDateFilter" placeholder="To date" readonly>
-                    <i class="bi bi-calendar calendar-icon"></i>
+                    <button class="date-clear-btn @(!string.IsNullOrEmpty(Model.TaskFilter.TaskStartDate?.ToString("yyyy-MM-dd")) ? "visible" : "")"
+                            onclick="clearDateFilter('startDateFilter')">
+                        <i class="bi bi-x"></i>
+                    </button>
                 </div>
             </div>
 
-            <input type="text" class="search-box" id="taskSearch" placeholder="Search tasks..." onkeyup="applyFilters()">
+            <div class="filter-group">
+                <div class="filter-label">End Date</div>
+                <div class="date-input-wrapper">
+                    <input type="text" class="date-text-input" id="endDateFilter"
+                           placeholder="End date"
+                           value="@(Model.TaskFilter.TaskEndDate?.ToString("yyyy-MM-dd"))"
+                           readonly>
+                    <i class="bi bi-calendar calendar-icon"></i>
+                    <button class="date-clear-btn @(!string.IsNullOrEmpty(Model.TaskFilter.TaskEndDate?.ToString("yyyy-MM-dd")) ? "visible" : "")"
+                            onclick="clearDateFilter('endDateFilter')">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Clear Filters Button -->
+            <div class="filter-group">
+                <div class="filter-label">&nbsp;</div>
+                <button class="pagination-btn" onclick="clearAllFilters()" style="min-width: 100px;">
+                    Clear Filters
+                </button>
+            </div>
         </div>
     </div>
 
@@ -2930,29 +2974,267 @@
         <table class="tasks-table">
             <thead>
                 <tr>
-                    <th onclick="sortTable('title')">Task Name</th>
-                    <th onclick="sortTable('deadline')">Deadline</th>
-                    <th onclick="sortTable('assignedBy')">Created By</th>
-                    <th onclick="sortTable('assignedTo')">Assigned To</th>
-                    <th onclick="sortTable('createdDate')">Created Date</th>
-                    <th onclick="sortTable('priority')">Priority</th>
-                    <th onclick="sortTable('status')">Status</th>
-                    <th onclick="sortTable('comments')">Comments</th>
+                    <th onclick="sortTable('title')" class="@(Model.TaskFilter.TaskSortBy == "title" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
+                        Task Name
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th onclick="sortTable('duedate')" class="@(Model.TaskFilter.TaskSortBy == "duedate" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
+                        Deadline
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th onclick="sortTable('createdby')" class="@(Model.TaskFilter.TaskSortBy == "createdby" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
+                        Created By
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th onclick="sortTable('assignedto')" class="@(Model.TaskFilter.TaskSortBy == "assignedto" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
+                        Assigned To
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th onclick="sortTable('createddatetime')" class="@(Model.TaskFilter.TaskSortBy == "createddatetime" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
+                        Created Date
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th onclick="sortTable('priority')" class="@(Model.TaskFilter.TaskSortBy == "priority" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
+                        Priority
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th onclick="sortTable('status')" class="@(Model.TaskFilter.TaskSortBy == "status" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
+                        Status
+                        <span class="sort-indicator"></span>
+                    </th>
+                    <th>Comments</th>
                 </tr>
             </thead>
             <tbody id="tasksTableBody">
-                <!-- Tasks will be populated here by JavaScript -->
+                @if (Model?.project?.projectTasks != null && Model.project.projectTasks.Any())
+                {
+                    foreach (var task in Model.project.projectTasks)
+                    {
+                        <tr onclick="openTaskModal('@task.Id')">
+                            <td>
+                                <div style="font-weight: 500; margin-bottom: 4px;">@task.Title</div>
+                                @if (!string.IsNullOrEmpty(task.Description))
+                                {
+                                    <div style="font-size: 12px; color: #9fadbc;">@task.Description</div>
+                                }
+                                @if (task.CreatedBy == Model.currentUserId.ToString())
+                                {
+                                    <div style="font-size: 10px; color: #0079bf;">(Created by you)</div>
+                                }
+                            </td>
+                            <td>
+                                @{
+                                    var dueDateHtml = "-";
+                                    if (task.DueDate.HasValue)
+                                    {
+                                        var date = task.DueDate.Value;
+                                        var today = DateTime.Today;
+                                        var diffDays = (date.Date - today).Days;
+                                        var formattedDate = date.ToString("dd MMM yyyy"); // Changed format
+
+                                        if (diffDays == 0)
+                                        {
+                                            dueDateHtml = "<span style=\"color: #ff6b6b; font-weight: 500;\">Today</span>";
+                                        }
+                                        else if (diffDays == 1)
+                                        {
+                                            dueDateHtml = "<span style=\"color: #ffa500; font-weight: 500;\">Tomorrow</span>";
+                                        }
+                                        else if (diffDays == -1)
+                                        {
+                                            dueDateHtml = "<span style=\"color: #ff6b6b; font-weight: 500;\">Yesterday</span>";
+                                        }
+                                        else if (diffDays < 0)
+                                        {
+                                            dueDateHtml = $"<span style=\"color: #ff6b6b; font-weight: 500;\">{formattedDate}</span>";
+                                        }
+                                        else if (diffDays <= 7)
+                                        {
+                                            dueDateHtml = $"<span style=\"color: #ffa500;\">{formattedDate}</span>";
+                                        }
+                                        else
+                                        {
+                                            dueDateHtml = formattedDate;
+                                        }
+                                    }
+                                }
+                                @Html.Raw(dueDateHtml)
+                            </td>
+                            <td>
+                                @{
+                                    var assignedByHtml = "";
+                                    if (task.CreatedBy == Model.currentUserId.ToString())
+                                    {
+                                        assignedByHtml = "<span style=\"color: #0079bf; font-weight: 500; display: flex; align-items: center; gap: 6px;\">You</span>";
+                                    }
+                                    else
+                                    {
+                                        var creatorUser = Model.project.projectUsers?.FirstOrDefault(user => user.Id.ToString() == task.CreatedBy);
+                                        if (creatorUser != null)
+                                        {
+                                            var userIndex = Model.project.projectUsers?.ToList().IndexOf(creatorUser) ?? 0;
+                                            var colorIndex = (userIndex % 6) + 1;
+                                            var initials = creatorUser.UserName?.Length >= 2 ? creatorUser.UserName.Substring(0, 2).ToUpper() : creatorUser.UserName?.ToUpper() ?? "?";
+
+                                            assignedByHtml = $@"<div style=""display: flex; align-items: center; gap: 6px;"">
+                        <div class=""table-user-avatar avatar-color-{colorIndex}"" style=""width: 24px; height: 24px; font-size: 10px;"">
+                                        {initials}
+                        </div>
+                        <span>{creatorUser.UserName}</span>
+                        </div>";
+                                        }
+                                        else
+                                        {
+                                            assignedByHtml = "<span style=\"display: flex; align-items: center; gap: 6px;\">Project Owner</span>";
+                                        }
+                                    }
+                                }
+                                @Html.Raw(assignedByHtml)
+                            </td>
+                            <td>
+                                <div class="users-container">
+                                    @{
+                                        var taskUsers = task.taskUsers ?? new List<UserReturnModel>();
+                                        if (!taskUsers.Any())
+                                        {
+                                            <span style="color: #9fadbc; font-style: italic;">-</span>
+                                        }
+                                        else
+                                        {
+                                            var validTaskUsers = taskUsers.Where(taskUser =>
+                                            Model.project.projectUsers?.Any(projectUser => projectUser.Id == taskUser.Id) == true
+                                            ).ToList();
+
+                                            foreach (var user in validTaskUsers)
+                                            {
+                                                var userIndex = validTaskUsers.IndexOf(user);
+                                                var colorIndex = (userIndex % 6) + 1;
+                                                var initials = user.UserName?.Length >= 2 ? user.UserName.Substring(0, 2).ToUpper() : user.UserName?.ToUpper() ?? "?";
+
+                                                <div class="user-cell" title="@user.UserName">
+                                                    <div class="table-user-avatar avatar-color-@colorIndex">@initials</div>
+                                                    <span>@user.UserName</span>
+                                                </div>
+                                            }
+                                        }
+                                    }
+                                </div>
+                            </td>
+                            <td>@(task.CreatedDateTime?.ToString("dd MMM yyyy") ?? "Unknown")</td>
+                            <td>
+                                @{
+                                    var priorityClass = "";
+                                    var priorityText = "";
+                                    switch (task.PriorityStatus.ToString())
+                                    {
+                                        case "High":
+                                            priorityClass = "priority-high";
+                                            priorityText = "High";
+                                            break;
+                                        case "Medium":
+                                            priorityClass = "priority-medium";
+                                            priorityText = "Medium";
+                                            break;
+                                        case "Low":
+                                        default:
+                                            priorityClass = "priority-low";
+                                            priorityText = "Low";
+                                            break;
+                                    }
+                                }
+                                <span class="priority-badge @priorityClass">@priorityText</span>
+                            </td>
+                            <td>
+                                @{
+                                    var statusClass = "";
+                                    var statusText = "";
+                                    switch (task.ProgressStatus)
+                                    {
+                                        case TaskManagement.Data.Migrations.Models.TaskStatus.ToDo:
+                                            statusClass = "status-todo";
+                                            statusText = "To Do";
+                                            break;
+                                        case TaskManagement.Data.Migrations.Models.TaskStatus.InProgress:
+                                            statusClass = "status-inprogress";
+                                            statusText = "In Progress";
+                                            break;
+                                        case TaskManagement.Data.Migrations.Models.TaskStatus.Done:
+                                            statusClass = "status-done";
+                                            statusText = "Done";
+                                            break;
+                                        case TaskManagement.Data.Migrations.Models.TaskStatus.ToBeReviewed:
+                                            statusClass = "status-review";
+                                            statusText = "To be Reviewed";
+                                            break;
+                                        case TaskManagement.Data.Migrations.Models.TaskStatus.ToBeCorrected:
+                                            statusClass = "status-corrected";
+                                            statusText = "To be Corrected";
+                                            break;
+                                        default:
+                                            statusClass = "status-todo";
+                                            statusText = "To Do";
+                                            break;
+                                    }
+                                }
+                                <span class="status-badge @statusClass">@statusText</span>
+                            </td>
+                            <td class="comments-cell">
+                                @{
+                                    var comments = task.taskComments ?? new List<TaskCommentReturnModel>();
+                                    var commentsCount = comments.Count;
+
+                                    if (commentsCount == 0)
+                                    {
+                                        <span style="color: #9fadbc; font-style: italic;">No comments</span>
+                                    }
+                                    else
+                                    {
+                                        var latestComment = comments.OrderByDescending(c => c.CreatedDateTime).FirstOrDefault();
+                                        var commentText = latestComment?.Comment ?? "Click to view comments";
+
+                                        <div>
+                                            <div class="comments-preview" title="@commentText">
+                                                @commentText
+                                            </div>
+                                            <button class="view-comments-btn" onclick="event.stopPropagation(); openTaskModal('@task.Id')">
+                                                View all (@commentsCount)
+                                            </button>
+                                        </div>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: #9fadbc; padding: 40px;">
+                            No tasks found.
+                        </td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>
 
     <!-- Pagination -->
     <div class="pagination">
-        <button class="pagination-btn" id="prevPage" onclick="changePage(-1)">Previous</button>
-        <span class="pagination-info" id="pageInfo">Page 1 of 1</span>
-        <button class="pagination-btn" id="nextPage" onclick="changePage(1)">Next</button>
+        <button class="pagination-btn" id="prevPage" onclick="changePage(-1)"
+                disabled="@(Model.TaskFilter.TaskPage <= 1)">
+            Previous
+        </button>
+        <span class="pagination-info" id="pageInfo">
+            Page @Model.TaskFilter.TaskPage of @Model.TaskFilter.TotalPages
+            (@Model.TaskFilter.TotalTaskCount total tasks)
+        </span>
+        <button class="pagination-btn" id="nextPage" onclick="changePage(1)"
+                disabled="@(Model.TaskFilter.TaskPage >= Model.TaskFilter.TotalPages)">
+            Next
+        </button>
     </div>
 </div>
+
 
 <!-- Add Task Modal -->
 <div class="modal-overlay" id="addTaskModal" onclick="closeAddTaskModal()">
@@ -3385,12 +3667,17 @@
 
 <script>
     // Global variables
+    let filteredTasks = [];
+    let currentPage = 1;
+    let pageSize = 10;
+
     let currentTask = null;
     const currentUserId = '@Model.currentUserId';
     let tasksData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model?.project.projectTasks ?? new List<ProjectTaskReturnModel>()));
     let usersData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model?.project.projectUsers ?? new List<ProjectUserReturnModel>()));
     const currentProjectId = '@Model.project.Id';
     let currentAddTaskPriority = '1';
+    filteredTasks = [...tasksData];
 
     const statusNames = {};
     @foreach (TaskManagement.Data.Migrations.Models.TaskStatus status in Enum.GetValues(typeof(TaskManagement.Data.Migrations.Models.TaskStatus)))
@@ -3402,185 +3689,166 @@
         <text>statusNames[@((int)status)] = "@displayName";</text>
     }
 
-    // Table View State Management
-    let currentSort = { field: 'createdDate', direction: 'desc' };
-    let currentFilters = {
-        member: '',
-        priority: '',
-        startDate: '',
-        endDate: '',
-        search: ''
-    };
-    let currentPage = 1;
-    const pageSize = 10;
-    let filteredTasks = [];
-    let currentTaskForComments = null;
+        let currentFilters = {
+            taskName: '@Html.Raw(Model.TaskFilter.TaskName)',
+            taskMemberName: '@Html.Raw(Model.TaskFilter.TaskMemberName)',
+            taskPriority: '@Html.Raw(Model.TaskFilter.TaskPriority)',
+            taskStartDate: '@(Model.TaskFilter.TaskStartDate?.ToString("yyyy-MM-dd"))',
+            taskEndDate: '@(Model.TaskFilter.TaskEndDate?.ToString("yyyy-MM-dd"))',
+            taskSortBy: '@Html.Raw(Model.TaskFilter.TaskSortBy)',
+            taskSortOrder: '@Html.Raw(Model.TaskFilter.TaskSortOrder)',
+            taskPage: @Model.TaskFilter.TaskPage,
+            taskPageSize: @Model.TaskFilter.TaskPageSize
+        };
 
-    // Initialize when page loads
+    let debounceTimer;
+    function debounce(func, delay) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(func, delay);
+    }
+
+    // Apply filters
+    function applyFilters() {
+        const projectId = '@Model.project.Id';
+        const params = new URLSearchParams();
+
+        currentFilters.taskName = document.getElementById('taskNameFilter').value;
+        currentFilters.taskMemberName = document.getElementById('memberFilter').value;
+        currentFilters.taskPriority = document.getElementById('priorityFilter').value;
+
+        const startDateDisplay = document.getElementById('startDateFilter').value;
+        const endDateDisplay = document.getElementById('endDateFilter').value;
+
+        currentFilters.taskStartDate = convertDisplayDateToISO(startDateDisplay);
+        currentFilters.taskEndDate = convertDisplayDateToISO(endDateDisplay);
+
+        // Add filters
+        if (currentFilters.taskName) params.append('taskName', currentFilters.taskName);
+        if (currentFilters.taskMemberName) params.append('taskMemberName', currentFilters.taskMemberName);
+        if (currentFilters.taskPriority) params.append('taskPriority', currentFilters.taskPriority);
+        if (currentFilters.taskStartDate) params.append('taskStartDate', currentFilters.taskStartDate);
+        if (currentFilters.taskEndDate) params.append('taskEndDate', currentFilters.taskEndDate);
+
+        // Add sorting
+        params.append('taskSortBy', currentFilters.taskSortBy);
+        params.append('taskSortOrder', currentFilters.taskSortOrder);
+
+        params.append('taskPage', '1');
+        params.append('taskPageSize', currentFilters.taskPageSize.toString());
+
+        window.location.href = `/Project/ProjectDetails/${projectId}?${params.toString()}`;
+    }
+
+    function convertDisplayDateToISO(displayDate) {
+        if (!displayDate) return '';
+
+        const monthMap = {
+            'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06',
+            'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+        };
+
+        const parts = displayDate.split(' ');
+        if (parts.length !== 3) return displayDate;
+
+        const day = parts[0].padStart(2, '0');
+        const month = monthMap[parts[1]];
+        const year = parts[2];
+
+        return `${year}-${month}-${day}`;
+    }
+
+    function convertISODateToDisplay(isoDate) {
+        if (!isoDate) return '';
+        return formatDateForDisplay(isoDate);
+    }
+
+    // Sorting function
+    function sortTable(field) {
+        const projectId = '@Model.project.Id';
+        const params = new URLSearchParams(window.location.search);
+
+        if (currentFilters.taskSortBy === field) {
+            currentFilters.taskSortOrder = currentFilters.taskSortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentFilters.taskSortBy = field;
+            currentFilters.taskSortOrder = 'asc';
+        }
+
+        params.set('taskSortBy', currentFilters.taskSortBy);
+        params.set('taskSortOrder', currentFilters.taskSortOrder);
+
+        window.location.href = `/Project/ProjectDetails/${projectId}?${params.toString()}`;
+    }
+
+    // Pagination function
+    function changePage(direction) {
+        const projectId = '@Model.project.Id';
+        const params = new URLSearchParams(window.location.search);
+        const currentPage = parseInt('@Model.TaskFilter.TaskPage');
+        const newPage = currentPage + direction;
+
+        if (newPage >= 1 && newPage <= @Model.TaskFilter.TotalPages) {
+            params.set('taskPage', newPage.toString());
+
+            window.location.href = `/Project/ProjectDetails/${projectId}?${params.toString()}`;
+        }
+    }
+
+    // Clear individual date filter
+    function clearDateFilter(dateFieldId) {
+        document.getElementById(dateFieldId).value = '';
+        applyFilters();
+    }
+
+    // Clear all filters
+    function clearAllFilters() {
+        document.getElementById('taskNameFilter').value = '';
+        document.getElementById('memberFilter').value = '';
+        document.getElementById('priorityFilter').value = '';
+        document.getElementById('startDateFilter').value = '';
+        document.getElementById('endDateFilter').value = '';
+
+        currentFilters.taskSortBy = 'createddatetime';
+        currentFilters.taskSortOrder = 'desc';
+
+        applyFilters();
+    }
+
+    // Initialize date pickers for filter inputs
     document.addEventListener('DOMContentLoaded', function () {
-        initializeTableView();
+        // Initialize date pickers for filter inputs
+        const startDateInput = document.getElementById('startDateFilter');
+        const endDateInput = document.getElementById('endDateFilter');
+
+        if (startDateInput) {
+            startDateInput.addEventListener('focus', function () {
+                openDatePicker(this);
+            });
+        }
+
+        if (endDateInput) {
+            endDateInput.addEventListener('focus', function () {
+                openDatePicker(this);
+            });
+        }
+
+        // Update clear button visibility for date inputs
+        updateClearButtonVisibility(startDateInput);
+        updateClearButtonVisibility(endDateInput);
     });
 
-    // ========== TABLE VIEW ==========
+    // Update clear button visibility
+    function updateClearButtonVisibility(inputElement) {
+        if (!inputElement) return;
 
-    function initializeTableView() {
-        filteredTasks = [...tasksData];
-        applySorting();
-        applyFilters();
-        renderTable();
-        updatePagination();
-        updateSortIndicators();
-    }
-
-    // Sorting
-    function sortTable(field) {
-        if (currentSort.field === field) {
-            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-        } else {
-            currentSort.field = field;
-            currentSort.direction = 'asc';
-        }
-
-        applySorting();
-        renderTable();
-        updateSortIndicators();
-    }
-
-    function applySorting() {
-        filteredTasks.sort((a, b) => {
-            let aValue = getSortValue(a, currentSort.field);
-            let bValue = getSortValue(b, currentSort.field);
-
-            if (aValue == null) aValue = '';
-            if (bValue == null) bValue = '';
-
-            if (currentSort.direction === 'asc') {
-                return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+        const clearBtn = inputElement.parentNode.querySelector('.date-clear-btn');
+        if (clearBtn) {
+            if (inputElement.value) {
+                clearBtn.classList.add('visible');
             } else {
-                return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+                clearBtn.classList.remove('visible');
             }
-        });
-    }
-
-    function getSortValue(task, field) {
-        switch (field) {
-            case 'title':
-                return task.Title?.toLowerCase() || '';
-            case 'deadline':
-                return task.DueDate ? new Date(task.DueDate) : new Date(0);
-            case 'assignedBy':
-                if (task.CreatedBy === currentUserId) {
-                    return 'you';
-                }
-                return (task.AssignedByUserName || 'project owner').toLowerCase();
-            case 'assignedTo':
-                return getAssignedTo(task)?.toLowerCase() || '';
-            case 'createdDate':
-                return task.CreatedDateTime ? new Date(task.CreatedDateTime) : new Date(0);
-            case 'priority':
-                return parseInt(task.PriorityStatus) || 1;
-            case 'status':
-                return statusNames[task.ProgressStatus] || '';
-            case 'comments':
-                return getCommentsCount(task);
-            default:
-                return '';
         }
-    }
-
-    function updateSortIndicators() {
-        document.querySelectorAll('.tasks-table th').forEach(th => {
-            th.classList.remove('sort-asc', 'sort-desc');
-        });
-
-        const header = Array.from(document.querySelectorAll('.tasks-table th')).find(
-            th => th.textContent.trim().includes(getHeaderText(currentSort.field))
-        );
-
-        if (header) {
-            header.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
-        }
-    }
-
-    function getHeaderText(field) {
-        const headers = {
-            'title': 'Task Name',
-            'deadline': 'Deadline',
-            'assignedBy': 'Assigned By',
-            'assignedTo': 'Assigned To',
-            'createdDate': 'Created Date',
-            'priority': 'Priority',
-            'status': 'Status',
-            'comments': 'Comments'
-        };
-        return headers[field] || '';
-    }
-
-    // Filtering
-    function applyFilters() {
-        currentFilters = {
-            member: document.getElementById('memberFilter').value,
-            priority: document.getElementById('priorityFilter').value,
-            startDate: document.getElementById('startDateFilter').value,
-            endDate: document.getElementById('endDateFilter').value,
-            search: document.getElementById('taskSearch').value.toLowerCase()
-        };
-
-        filteredTasks = tasksData.filter(task => {
-            return filterByMember(task) &&
-                filterByPriority(task) &&
-                filterByDateRange(task) &&
-                filterBySearch(task);
-        });
-
-        applySorting();
-        currentPage = 1;
-        renderTable();
-        updatePagination();
-    }
-
-    function filterByMember(task) {
-        if (!currentFilters.member) return true;
-
-        const taskUsers = task.taskUsers || [];
-        return taskUsers.some(user => user.Id === currentFilters.member);
-    }
-
-    function filterByPriority(task) {
-        if (!currentFilters.priority) return true;
-
-        const taskPriority = String(task.PriorityStatus || '1');
-        const filterPriority = String(currentFilters.priority);
-
-        return taskPriority === filterPriority;
-    }
-
-    function filterByDateRange(task) {
-        if (!currentFilters.startDate && !currentFilters.endDate) return true;
-        if (!task.DueDate) return false;
-
-        const taskDate = new Date(task.DueDate).setHours(0, 0, 0, 0);
-        const startDate = currentFilters.startDate ? new Date(currentFilters.startDate).setHours(0, 0, 0, 0) : null;
-        const endDate = currentFilters.endDate ? new Date(currentFilters.endDate).setHours(23, 59, 59, 999) : null;
-
-        if (startDate && endDate) {
-            return taskDate >= startDate && taskDate <= endDate;
-        } else if (startDate) {
-            return taskDate >= startDate;
-        } else if (endDate) {
-            return taskDate <= endDate;
-        }
-
-        return true;
-    }
-
-    function filterBySearch(task) {
-        if (!currentFilters.search) return true;
-
-        const searchTerm = currentFilters.search;
-        return task.Title?.toLowerCase().includes(searchTerm) ||
-            task.Description?.toLowerCase().includes(searchTerm) ||
-            getAssignedTo(task).toLowerCase().includes(searchTerm);
     }
 
     // Table Rendering
@@ -3612,7 +3880,6 @@
         const row = document.createElement('tr');
         row.onclick = () => openTaskModal(task.Id);
 
-        // Check if current user is the task creator
         const isTaskCreator = task.CreatedBy === currentUserId;
 
         row.innerHTML = `
@@ -3622,13 +3889,13 @@
                 ${isTaskCreator ? '<div style="font-size: 10px; color: #0079bf;">(Created by you)</div>' : ''}
             </td>
             <td>${formatDueDate(task.DueDate)}</td>
-            <td>${getAssignedBy(task)}</td> <!-- This now returns HTML -->
+            <td>${getAssignedBy(task)}</td>
             <td>
                 <div class="users-container">
                     ${createAssignedToCells(task)}
                 </div>
             </td>
-            <td>${formatDate(task.CreatedDateTime)}</td>
+            <td>${formatDateForDisplay(task.CreatedDateTime)}</td>
             <td>${createPriorityBadge(task.PriorityStatus)}</td>
             <td>${createStatusBadge(task.ProgressStatus)}</td>
             <td class="comments-cell">
@@ -3650,7 +3917,7 @@
         taskDate.setHours(0, 0, 0, 0);
 
         const diffTime = taskDate - today;
-        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); // Use round instead of ceil
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
         const formattedDate = formatDateForDisplay(dueDate);
 
@@ -3674,13 +3941,15 @@
 
         const date = new Date(dateString);
 
+        // Handle timezone by using local date components
         const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const month = date.getMonth();
         const day = String(date.getDate()).padStart(2, '0');
 
-        const formatted = `${year}-${month}-${day}`;
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-        return formatted;
+        return `${day} ${monthNames[month]} ${year}`;
     }
 
     function getAssignedBy(task) {
@@ -3787,22 +4056,16 @@
         const prevBtn = document.getElementById('prevPage');
         const nextBtn = document.getElementById('nextPage');
 
-        pageInfo.textContent = `Page ${currentPage} of ${totalPages || 1}`;
+        // Ensure current page is within valid range
+        if (currentPage > totalPages && totalPages > 0) {
+            currentPage = totalPages;
+        } else if (totalPages === 0) {
+            currentPage = 1;
+        }
+
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages || 1} (${filteredTasks.length} total tasks)`;
         prevBtn.disabled = currentPage === 1;
         nextBtn.disabled = currentPage === totalPages || totalPages === 0;
-    }
-
-    function changePage(direction) {
-        const totalPages = Math.ceil(filteredTasks.length / pageSize);
-        const newPage = currentPage + direction;
-
-        if (newPage >= 1 && newPage <= totalPages) {
-            currentPage = newPage;
-            renderTable();
-            updatePagination();
-
-            document.querySelector('.tasks-table-container').scrollTop = 0;
-        }
     }
 
     // ========== COMMENTS FUNCTIONALITY ==========
@@ -3859,14 +4122,7 @@
 
     function formatDate(dateString) {
         if (!dateString) return '';
-        const date = new Date(dateString);
-
-        // Use UTC for consistent display
-        const year = date.getUTCFullYear();
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(date.getUTCDate()).padStart(2, '0');
-
-        return `${year}-${month}-${day}`;
+        return formatDateForDisplay(dateString);
     }
 
     // ========== Task Modal ==========
@@ -4160,7 +4416,6 @@
             return;
         }
 
-        // Use the UTC formatting function
         const formattedDate = formatDateForDisplay(dueDate);
 
         if (dueDateInput) {
@@ -4810,13 +5065,29 @@
             const data = await response.json();
 
             if (data.success) {
-                const taskIndex = tasksData.findIndex(t => t.Id === currentTask.Id);
-                if (taskIndex !== -1) {
-                    tasksData.splice(taskIndex, 1);
+                // Instead of manipulating client-side data for server-side pagination,
+                // we need to refresh the page to get the updated data from the server
+                const projectId = '@Model.project.Id';
+                const params = new URLSearchParams(window.location.search);
+
+                // Keep current filters but go to previous page if this was the last task on the page
+                const currentPage = parseInt('@Model.TaskFilter.TaskPage');
+                const totalTasks = parseInt('@Model.TaskFilter.TotalTaskCount');
+                const pageSize = parseInt('@Model.TaskFilter.TaskPageSize');
+
+                // Calculate if we need to go to previous page
+                const tasksOnCurrentPage = totalTasks - ((currentPage - 1) * pageSize);
+                let newPage = currentPage;
+
+                if (tasksOnCurrentPage <= 1 && currentPage > 1) {
+                    newPage = currentPage - 1;
                 }
 
-                removeTableRow(currentTask.Id);
-                closeTaskModal();
+                params.set('taskPage', newPage.toString());
+
+                // Reload the page with updated data
+                window.location.href = `/Project/ProjectDetails/${projectId}?${params.toString()}`;
+
             } else {
                 // Show specific error message from backend
                 alert('Failed to remove task: ' + (data.message || 'Unknown error'));
@@ -5258,11 +5529,18 @@
     }
 
     function removeTableRow(taskId) {
-        // Remove task from filtered data and refresh table
         const taskIndex = filteredTasks.findIndex(t => t.Id === taskId);
         if (taskIndex !== -1) {
             filteredTasks.splice(taskIndex, 1);
         }
+
+        const totalPages = Math.ceil(filteredTasks.length / pageSize);
+        if (currentPage > totalPages && totalPages > 0) {
+            currentPage = totalPages;
+        } else if (totalPages === 0) {
+            currentPage = 1;
+        }
+
         renderTable();
         updatePagination();
     }
@@ -6113,6 +6391,172 @@
             modal.style.display = 'block';
         }
     });
+
+    // ========== CSV Export Functionality ==========
+    async function exportTasksToCSV() {
+        const projectId = '@Model?.project?.Id';
+        const projectName = '@Model?.project?.Name' || 'Project';
+        const sanitizedProjectName = projectName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+        const filename = `${sanitizedProjectName}_tasks.csv`;
+
+        try {
+            // Show loading state
+            const exportBtn = event.target;
+            const originalText = exportBtn.innerHTML;
+            exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Exporting...';
+            exportBtn.disabled = true;
+
+            const allTasks = await fetchAllTasksFromServer(projectId);
+
+            if (!allTasks || allTasks.length === 0) {
+                alert('No tasks found to export');
+                resetExportButton(exportBtn, originalText);
+                return;
+            }
+
+            // Generate CSV
+            const csvContent = generateCSVContent(allTasks);
+
+            downloadCSV(csvContent, filename);
+
+            resetExportButton(exportBtn, originalText);
+
+        } catch (error) {
+            console.error('Error exporting CSV:', error);
+            alert(`Error exporting tasks: ${error.message}`);
+            resetExportButton(exportBtn, originalText);
+        }
+    }
+
+    async function fetchAllTasksFromServer(projectId) {
+        try {
+            const response = await fetch(`/Project/GetAllProjectTasks?projectId=${encodeURIComponent(projectId)}`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                return data.tasks || [];
+            } else {
+                throw new Error(data.message || 'Failed to fetch tasks');
+            }
+        } catch (error) {
+            console.error('Error fetching all tasks:', error);
+            throw error;
+        }
+    }
+
+    // Generate CSV content from tasks
+    function generateCSVContent(tasks) {
+        const headers = [
+            'Task Name',
+            'Description',
+            'Deadline',
+            'Priority',
+            'ProgressStatus'
+        ];
+
+        // Convert tasks to CSV rows
+        const csvRows = [];
+
+        // Add header row
+        csvRows.push(headers.join(','));
+
+        // Add data rows
+        tasks.forEach(task => {
+            const row = [
+                escapeCsvField(task.title || ''),
+                escapeCsvField(task.description || ''),
+                escapeCsvField(formatDateForCSV(task.dueDate)),
+                escapeCsvField(getPriorityDisplay(task.priorityStatus)),
+                escapeCsvField(getStatusDisplay(task.progressStatus)),
+            ];
+            csvRows.push(row.join(','));
+        });
+
+        return csvRows.join('\n');
+    }
+
+    // Download CSV file
+    function downloadCSV(csvContent, filename) {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    }
+
+    function resetExportButton(button, originalText) {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }
+
+    function escapeCsvField(field) {
+        if (field === null || field === undefined) return '';
+
+        const stringField = String(field);
+
+        if (stringField.includes(',') || stringField.includes('\n') || stringField.includes('"')) {
+            return '"' + stringField.replace(/"/g, '""') + '"';
+        }
+
+        return stringField;
+    }
+
+    function formatDateForCSV(dateString) {
+        if (!dateString) return '';
+
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+
+        // Format as YYYY-MM-DD for consistency
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        return `${year}-${month}-${day}`;
+    }
+
+    function getCreatedByDisplay(task) {
+        if (task.CreatedBy === currentUserId) {
+            return 'You';
+        }
+
+        const creatorUser = usersData.find(user => user.Id === task.CreatedBy);
+        return creatorUser ? creatorUser.UserName : (task.CreatedBy || 'Unknown');
+    }
+
+    function getPriorityDisplay(priorityStatus) {
+        const priorityValue = typeof priorityStatus === 'string' ? priorityStatus : String(priorityStatus);
+
+        const priorityMap = {
+            '1': 'Low',
+            'Low': 'Low',
+            '2': 'Medium',
+            'Medium': 'Medium',
+            '3': 'High',
+            'High': 'High'
+        };
+
+        return priorityMap[priorityValue] || 'Low';
+    }
+
+    function getStatusDisplay(progressStatus) {
+        const statusValue = typeof progressStatus === 'string' ? parseInt(progressStatus) : progressStatus;
+
+        return statusNames[statusValue] || 'Unknown';
+    }
 </script>
 
 <script src="~/js/createtask.js"></script>

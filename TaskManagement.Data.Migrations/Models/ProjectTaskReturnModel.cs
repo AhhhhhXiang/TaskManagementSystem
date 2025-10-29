@@ -11,7 +11,6 @@ namespace TaskManagement.Data.Migrations.Models
     public class ProjectTaskReturnModel
     {
         public Guid Id { get; set; }
-        public Guid ProjectId { get; set; }
         public string Title { get; set; }
         public string? Description { get; set; }
         public DateTime? StartDate { get; set; }
@@ -23,5 +22,8 @@ namespace TaskManagement.Data.Migrations.Models
         public DateTime? CreatedDateTime { get; set; }
         public List<TaskAttachmentReturnModel>? taskAttachments { get; set; }
         public List<TaskCommentReturnModel>? taskComments { get; set; }
+        public int TotalTaskCount { get; set; }
+        public int TaskPage { get; set; }
+        public int TaskPageSize { get; set; }
     }
 }
