@@ -134,7 +134,10 @@ public class ProjectController : Controller
         });
     }
 
-    public async Task<IActionResult> ProjectDetails(Guid id)
+    public async Task<IActionResult> ProjectDetails(Guid id, [FromQuery] string? taskName, [FromQuery] DateTime? taskStartDate,
+    [FromQuery] DateTime? taskEndDate, [FromQuery] string? taskPriority, [FromQuery] string? taskMemberName,
+    [FromQuery] string? taskSortBy = "Title", [FromQuery] string? taskSortOrder = "asc",
+    [FromQuery] int taskPage = 1, [FromQuery] int taskPageSize = 10)
     {
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Challenge();
@@ -144,7 +147,31 @@ public class ProjectController : Controller
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/Project/{id}?modules=ProjectUser&modules=Tasks&modules=TaskAttachment&modules=TaskUser&modules=TaskComment";
+        var apiUrlBuilder = new StringBuilder($"{_configuration["APIURL"].TrimEnd('/')}/api/Project/{id}");
+        apiUrlBuilder.Append("?modules=ProjectUser&modules=Tasks&modules=TaskAttachment&modules=TaskUser&modules=TaskComment");
+
+        if (!string.IsNullOrEmpty(taskName))
+            apiUrlBuilder.Append($"&taskName={Uri.EscapeDataString(taskName)}");
+
+        if (taskStartDate.HasValue)
+            apiUrlBuilder.Append($"&taskStartDate={taskStartDate.Value:yyyy-MM-dd}");
+
+        if (taskEndDate.HasValue)
+            apiUrlBuilder.Append($"&taskEndDate={taskEndDate.Value:yyyy-MM-dd}");
+
+        if (!string.IsNullOrEmpty(taskPriority))
+            apiUrlBuilder.Append($"&taskPriority={Uri.EscapeDataString(taskPriority)}");
+
+        if (!string.IsNullOrEmpty(taskMemberName))
+            apiUrlBuilder.Append($"&taskMemberName={Uri.EscapeDataString(taskMemberName)}");
+
+        apiUrlBuilder.Append($"&taskSortBy={Uri.EscapeDataString(taskSortBy)}");
+        apiUrlBuilder.Append($"&taskSortOrder={Uri.EscapeDataString(taskSortOrder)}");
+
+        apiUrlBuilder.Append($"&taskPage={taskPage}");
+        apiUrlBuilder.Append($"&taskPageSize={taskPageSize}");
+
+        var apiUrl = apiUrlBuilder.ToString();
         var response = await client.GetAsync(apiUrl);
 
         if (!response.IsSuccessStatusCode)
@@ -174,7 +201,20 @@ public class ProjectController : Controller
         {
             project = project,
             users = users,
-            currentUserId = Guid.Parse(user.Id)
+            currentUserId = Guid.Parse(user.Id),
+            TaskFilter = new TaskFilterViewModel
+            {
+                TaskName = taskName,
+                TaskStartDate = taskStartDate,
+                TaskEndDate = taskEndDate,
+                TaskPriority = taskPriority,
+                TaskMemberName = taskMemberName,
+                TaskSortBy = taskSortBy,
+                TaskSortOrder = taskSortOrder,
+                TaskPage = taskPage,
+                TaskPageSize = taskPageSize,
+                TotalTaskCount = project.TotalTaskCount
+            }
         };
 
         return View(viewModel);
