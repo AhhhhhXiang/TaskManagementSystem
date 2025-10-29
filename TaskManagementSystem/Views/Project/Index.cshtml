@@ -389,6 +389,31 @@
                 background-color: #669DF1;
             }
 
+    .btn-add-task {
+        background-color: #0079bf;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        text-decoration: none;
+    }
+
+        .btn-add-task:hover {
+            background-color: #026aa7;
+        }
+
+        .btn-add-task:active {
+            background-color: #055a8c;
+        }
+
     /* Responsive styles */
     @@media (max-height: 800px) {
         .boards-container-wrapper {
@@ -441,6 +466,9 @@
 <div class="projects-container">
     <div class="projects-header">
         <h1 class="projects-title">Your Projects</h1>
+        <button class="btn-add-task" onclick="exportProjectsToCSV()" style="background-color: #28a745; margin-left: auto;">
+            <i class="bi bi-file-earmark-spreadsheet"></i> Export as CSV
+        </button>
     </div>
 
     <!-- Filters Section -->
@@ -791,4 +819,86 @@
             });
         });
     });
+
+    async function exportProjectsToCSV() {
+        const exportBtn = event.target;
+        const originalText = exportBtn.innerHTML;
+
+        try {
+            // Show loading state
+            exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Exporting...';
+            exportBtn.disabled = true;
+
+            // Create simple loading message
+            const loadingMsg = document.createElement('div');
+            loadingMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #28a745; color: white; padding: 10px 15px; border-radius: 4px; z-index: 1000;';
+            loadingMsg.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating CSV export...';
+            document.body.appendChild(loadingMsg);
+
+            // Trigger server-side export
+            const response = await fetch('/Project/ExportProjectsToCSV');
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Export failed: ${response.status}`);
+            }
+
+            // Check if response is CSV
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('text/csv')) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Invalid response format');
+            }
+
+            // Get filename
+            const contentDisposition = response.headers.get('content-disposition');
+            let filename = 'projects_export.csv';
+
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (filenameMatch != null && filenameMatch[1]) {
+                    filename = filenameMatch[1].replace(/['"]/g, '');
+                }
+            }
+
+            // Download file
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            // Update to success message
+            loadingMsg.innerHTML = '<i class="bi bi-check-circle"></i> CSV export completed!';
+            loadingMsg.style.background = '#28a745';
+
+            // Remove message after 3 seconds
+            setTimeout(() => {
+                if (document.body.contains(loadingMsg)) {
+                    document.body.removeChild(loadingMsg);
+                }
+            }, 3000);
+
+            console.log('Projects CSV export completed successfully');
+
+        } catch (error) {
+            console.error('Error exporting projects CSV:', error);
+
+            // Remove loading message if it exists
+            const existingMsg = document.querySelector('[style*="position: fixed"]');
+            if (existingMsg) document.body.removeChild(existingMsg);
+
+            // Show error message
+            alert(`Error exporting projects: ${error.message}`);
+        } finally {
+            // Reset button
+            exportBtn.innerHTML = originalText;
+            exportBtn.disabled = false;
+        }
+    }
 </script>

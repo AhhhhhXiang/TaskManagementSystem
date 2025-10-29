@@ -2888,6 +2888,9 @@
             <button class="btn-add-task" onclick="openAddTaskModal()">
                 <i class="bi bi-plus-lg"></i> Add New Task
             </button>
+            <button class="btn-add-task" onclick="exportTasksToCSV()" style="background-color: #28a745;">
+                <i class="bi bi-file-earmark-spreadsheet"></i> Export as CSV
+            </button>
         </div>
 
         <!-- Enhanced Filter Controls -->
@@ -6396,6 +6399,190 @@
             modal.style.display = 'block';
         }
     });
+
+    // ========== CSV Export Functionality ==========
+    async function exportTasksToCSV() {
+        const projectId = '@Model?.project?.Id';
+        const projectName = '@Model?.project?.Name' || 'Project';
+        const sanitizedProjectName = projectName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+        const filename = `${sanitizedProjectName}_tasks.csv`;
+
+        try {
+            // Show loading state
+            const exportBtn = event.target;
+            const originalText = exportBtn.innerHTML;
+            exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Exporting...';
+            exportBtn.disabled = true;
+
+            console.log('Starting CSV export for project:', projectId);
+
+            // Fetch all tasks from the server using GET
+            const allTasks = await fetchAllTasksFromServer(projectId);
+
+            if (!allTasks || allTasks.length === 0) {
+                alert('No tasks found to export');
+                resetExportButton(exportBtn, originalText);
+                return;
+            }
+
+            // Generate CSV
+            console.log(allTasks);
+            const csvContent = generateCSVContent(allTasks);
+
+            // Trigger download
+            downloadCSV(csvContent, filename);
+
+            // Reset button
+            resetExportButton(exportBtn, originalText);
+
+        } catch (error) {
+            console.error('Error exporting CSV:', error);
+            alert(`Error exporting tasks: ${error.message}`);
+            resetExportButton(exportBtn, originalText);
+        }
+    }
+
+    async function fetchAllTasksFromServer(projectId) {
+        try {
+            const response = await fetch(`/Project/GetAllProjectTasks?projectId=${encodeURIComponent(projectId)}`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                return data.tasks || [];
+            } else {
+                throw new Error(data.message || 'Failed to fetch tasks');
+            }
+        } catch (error) {
+            console.error('Error fetching all tasks:', error);
+            throw error;
+        }
+    }
+
+    // Generate CSV content from tasks (updated for your API response structure)
+    function generateCSVContent(tasks) {
+        // Define CSV headers
+        const headers = [
+            'Task Name',
+            'Description',
+            'Deadline',
+            'Priority',
+            'ProgressStatus'
+        ];
+
+        // Convert tasks to CSV rows
+        const csvRows = [];
+
+        // Add header row
+        csvRows.push(headers.join(','));
+
+        // Add data rows
+        tasks.forEach(task => {
+            const row = [
+                escapeCsvField(task.title || ''),
+                escapeCsvField(task.description || ''),
+                escapeCsvField(formatDateForCSV(task.dueDate)),
+                escapeCsvField(getPriorityDisplay(task.priorityStatus)),
+                escapeCsvField(getStatusDisplay(task.progressStatus)),
+            ];
+            csvRows.push(row.join(','));
+        });
+
+        return csvRows.join('\n');
+    }
+
+    // Download CSV file
+    function downloadCSV(csvContent, filename) {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Clean up URL
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    }
+
+    // Helper function to reset export button
+    function resetExportButton(button, originalText) {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }
+
+    // Helper function to escape CSV fields
+    function escapeCsvField(field) {
+        if (field === null || field === undefined) return '';
+
+        const stringField = String(field);
+
+        // Escape quotes and wrap in quotes if contains comma, newline, or quote
+        if (stringField.includes(',') || stringField.includes('\n') || stringField.includes('"')) {
+            return '"' + stringField.replace(/"/g, '""') + '"';
+        }
+
+        return stringField;
+    }
+
+    // Helper function to format date for CSV
+    function formatDateForCSV(dateString) {
+        if (!dateString) return '';
+
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+
+        // Format as YYYY-MM-DD for consistency
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        return `${year}-${month}-${day}`;
+    }
+
+    // Helper function to get created by display
+    function getCreatedByDisplay(task) {
+        if (task.CreatedBy === currentUserId) {
+            return 'You';
+        }
+
+        // Since we don't have user data in the API response, we'll use what we have
+        const creatorUser = usersData.find(user => user.Id === task.CreatedBy);
+        return creatorUser ? creatorUser.UserName : (task.CreatedBy || 'Unknown');
+    }
+
+    // Helper function to get priority display - updated for PriorityStatus enum
+    function getPriorityDisplay(priorityStatus) {
+        // PriorityStatus is an enum, so we need to handle both string and number values
+        const priorityValue = typeof priorityStatus === 'string' ? priorityStatus : String(priorityStatus);
+
+        const priorityMap = {
+            '1': 'Low',
+            'Low': 'Low',
+            '2': 'Medium',
+            'Medium': 'Medium',
+            '3': 'High',
+            'High': 'High'
+        };
+
+        return priorityMap[priorityValue] || 'Low';
+    }
+
+    // Helper function to get status display - updated for TaskStatus enum
+    function getStatusDisplay(progressStatus) {
+        // TaskStatus is an enum, so we need to handle both string and number values
+        const statusValue = typeof progressStatus === 'string' ? parseInt(progressStatus) : progressStatus;
+
+        return statusNames[statusValue] || 'Unknown';
+    }
 </script>
 
 <script src="~/js/createtask.js"></script>

@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TaskManagement.Data.Migrations.Models;
 using TaskManagementAPI.Models.Project;
+using TaskManagementAPI.Models.ProjectTask;
 using TaskManagementAPI.Models.ProjectUser;
 using TaskManagementSystem.Models.ViewModels;
 
@@ -60,6 +61,110 @@ public class ProjectController : Controller
         };
 
         return View(viewModel);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportProjectsToCSV()
+    {
+        try
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Json(new { success = false, message = "User not found." });
+
+            var token = await GenerateJwtToken(user);
+
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            // Call your API to get ALL projects without pagination
+            var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/Project?page=1&pageSize=10000&modules=ProjectUser&modules=Tasks&modules=TaskUser";
+
+            var response = await client.GetAsync(apiUrl);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                return Json(new { success = false, message = $"API error: {errorText}" });
+            }
+
+            var apiResponse = await response.Content.ReadFromJsonAsync<GetAllProjectsResponse>();
+            if (apiResponse == null || apiResponse.projects == null)
+            {
+                return Json(new { success = false, message = "No projects found to export." });
+            }
+
+            // Generate simplified CSV content
+            var csvContent = GenerateSimplifiedProjectsCSV(apiResponse.projects);
+
+            // Return CSV file
+            var timestamp = DateTime.Now.ToString("yyyyMMdd");
+            var filename = $"projects_export_{timestamp}.csv";
+
+            return File(System.Text.Encoding.UTF8.GetBytes(csvContent), "text/csv", filename);
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
+        }
+    }
+
+    private string GenerateSimplifiedProjectsCSV(List<ProjectsResponse> projects)
+    {
+        var csv = new StringBuilder();
+
+        // Add simplified headers - only the requested columns
+        csv.AppendLine("Project Name,Tasks,Task Priorities,Task Deadlines,Members");
+
+        // Add data rows
+        foreach (var project in projects)
+        {
+            // Extract all task information
+            var allTaskNames = new List<string>();
+            var allTaskPriorities = new List<string>();
+            var allTaskDeadlines = new List<string>();
+
+            if (project.projectTasks != null)
+            {
+                foreach (var task in project.projectTasks)
+                {
+                    allTaskNames.Add(task.Title ?? "Untitled Task");
+                    allTaskPriorities.Add(task.PriorityStatus.ToString() ?? "Not Set");
+                    allTaskDeadlines.Add(task.DueDate?.ToString("yyyy-MM-dd") ?? "No Deadline");
+                }
+            }
+
+            // Extract all member names
+            var allMemberNames = new List<string>();
+            if (project.projectUsers != null)
+            {
+                allMemberNames.AddRange(project.projectUsers
+                    .Where(pu => !string.IsNullOrEmpty(pu.UserName))
+                    .Select(pu => pu.UserName));
+            }
+
+            // Join arrays with semicolons for CSV
+            var tasksString = string.Join("; ", allTaskNames);
+            var prioritiesString = string.Join("; ", allTaskPriorities);
+            var deadlinesString = string.Join("; ", allTaskDeadlines);
+            var membersString = string.Join("; ", allMemberNames);
+
+            csv.AppendLine(
+                $"\"{EscapeCsvField(project.Name)}\"," +
+                $"\"{EscapeCsvField(tasksString)}\"," +
+                $"\"{EscapeCsvField(prioritiesString)}\"," +
+                $"\"{EscapeCsvField(deadlinesString)}\"," +
+                $"\"{EscapeCsvField(membersString)}\""
+            );
+        }
+
+        return csv.ToString();
+    }
+
+    private string EscapeCsvField(string field)
+    {
+        if (string.IsNullOrEmpty(field)) return "";
+        // Escape quotes by doubling them
+        return field.Replace("\"", "\"\"");
     }
 
     private async Task<string> GenerateJwtToken(IdentityUser user)
@@ -1347,6 +1452,50 @@ public class ProjectController : Controller
                     : "Failed to delete comment";
                 return Json(new { success = false, message });
             }
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllProjectTasks(string projectId)
+    {
+        try
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Json(new { success = false, message = "User not found." });
+
+            if (string.IsNullOrWhiteSpace(projectId))
+                return Json(new { success = false, message = "Project ID is required." });
+
+            var token = await GenerateJwtToken(user);
+
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/ProjectTask?projectId={projectId}";
+
+            var response = await client.GetAsync(apiUrl);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                return Json(new { success = false, message = $"API error: {errorText}" });
+            }
+
+            var tasksJson = await response.Content.ReadAsStringAsync();
+
+            var apiResponse = JsonSerializer.Deserialize<GetAllProjectTasksResponse>(tasksJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            var tasks = apiResponse?.projectTasks ?? new List<ProjectTasksResponse>();
+
+            return Json(new { success = true, tasks = tasks });
         }
         catch (Exception ex)
         {
