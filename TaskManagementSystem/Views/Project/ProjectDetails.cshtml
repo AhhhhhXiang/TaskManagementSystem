@@ -2911,7 +2911,7 @@
                     {
                         foreach (var user in Model.project.projectUsers)
                         {
-                            <option value="@user.UserName" selected="@(Model.TaskFilter.TaskMemberName == user.UserName)">@user.UserName</option>
+                            <option value="@user.Id" selected="@(Model.TaskFilter.TaskUserId == user.Id.ToString())">@user.UserName</option>
                         }
                     }
                 </select>
@@ -3691,7 +3691,7 @@
 
         let currentFilters = {
             taskName: '@Html.Raw(Model.TaskFilter.TaskName)',
-            taskMemberName: '@Html.Raw(Model.TaskFilter.TaskMemberName)',
+            taskUserId: '@Html.Raw(Model.TaskFilter.TaskUserId)', // Changed from taskMemberName to taskUserId
             taskPriority: '@Html.Raw(Model.TaskFilter.TaskPriority)',
             taskStartDate: '@(Model.TaskFilter.TaskStartDate?.ToString("yyyy-MM-dd"))',
             taskEndDate: '@(Model.TaskFilter.TaskEndDate?.ToString("yyyy-MM-dd"))',
@@ -3699,7 +3699,8 @@
             taskSortOrder: '@Html.Raw(Model.TaskFilter.TaskSortOrder)',
             taskPage: @Model.TaskFilter.TaskPage,
             taskPageSize: @Model.TaskFilter.TaskPageSize
-        };
+    };
+
 
     let debounceTimer;
     function debounce(func, delay) {
@@ -3713,7 +3714,7 @@
         const params = new URLSearchParams();
 
         currentFilters.taskName = document.getElementById('taskNameFilter').value;
-        currentFilters.taskMemberName = document.getElementById('memberFilter').value;
+        currentFilters.taskUserId = document.getElementById('memberFilter').value; // Changed from taskMemberName to taskUserId
         currentFilters.taskPriority = document.getElementById('priorityFilter').value;
 
         const startDateDisplay = document.getElementById('startDateFilter').value;
@@ -3724,7 +3725,7 @@
 
         // Add filters
         if (currentFilters.taskName) params.append('taskName', currentFilters.taskName);
-        if (currentFilters.taskMemberName) params.append('taskMemberName', currentFilters.taskMemberName);
+        if (currentFilters.taskUserId) params.append('taskUserId', currentFilters.taskUserId); // Changed parameter name
         if (currentFilters.taskPriority) params.append('taskPriority', currentFilters.taskPriority);
         if (currentFilters.taskStartDate) params.append('taskStartDate', currentFilters.taskStartDate);
         if (currentFilters.taskEndDate) params.append('taskEndDate', currentFilters.taskEndDate);
@@ -6161,7 +6162,7 @@
 
         usersData.forEach(user => {
             const option = document.createElement('option');
-            option.value = user.Id;
+            option.value = user.Id; // Store user ID instead of name
             option.textContent = user.UserName;
             memberFilter.appendChild(option);
         });
@@ -6435,7 +6436,7 @@
     function getCurrentFilterValues() {
         return {
             taskName: document.getElementById('taskNameFilter').value,
-            taskMemberName: document.getElementById('memberFilter').value,
+            taskUserId: document.getElementById('memberFilter').value, // Changed from taskMemberName to taskUserId
             taskPriority: document.getElementById('priorityFilter').value,
             taskStartDate: convertDisplayDateToISO(document.getElementById('startDateFilter').value),
             taskEndDate: convertDisplayDateToISO(document.getElementById('endDateFilter').value),

@@ -24,22 +24,63 @@ public class ProjectController : Controller
         _configuration = configuration;
     }
 
-    public async Task<IActionResult> Index(int page = 1, string projectName = "", string memberName = "", string priority = "")
+    public async Task<IActionResult> Index(int page = 1, string projectName = "", string userId = "", string priority = "")
     {
-        var user = await _userManager.GetUserAsync(User);
-        if (user == null) return Challenge();
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser == null) return Challenge();
 
-        var token = await GenerateJwtToken(user);
+        var token = await GenerateJwtToken(currentUser);
 
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var projectsApiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/Project?page=1&pageSize=1000&modules=ProjectUser";
+        var projectsResponse = await client.GetAsync(projectsApiUrl);
+
+        var sharedUsers = new List<dynamic>();
+
+        if (projectsResponse.IsSuccessStatusCode)
+        {
+            var apiResponse = await projectsResponse.Content.ReadFromJsonAsync<GetAllProjectsResponse>();
+            if (apiResponse?.projects != null)
+            {
+                var allUsers = new Dictionary<string, dynamic>();
+                var currentUserGuid = Guid.Parse(currentUser.Id);
+
+                foreach (var project in apiResponse.projects)
+                {
+                    if (project.projectUsers != null)
+                    {
+                        foreach (var projectUser in project.projectUsers)
+                        {
+                            // Skip the current user
+                            if (projectUser.Id == currentUserGuid)
+                                continue;
+
+                            if (!allUsers.ContainsKey(projectUser.Id.ToString()))
+                            {
+                                allUsers[projectUser.Id.ToString()] = new
+                                {
+                                    Id = projectUser.Id.ToString(),
+                                    UserName = projectUser.UserName
+                                };
+                            }
+                        }
+                    }
+                }
+
+                sharedUsers = allUsers.Values.OrderBy(u => u.UserName).ToList();
+            }
+        }
+
+        ViewBag.AllUsers = sharedUsers;
 
         var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/Project?page={page}&pageSize=14&modules=ProjectUser&modules=Tasks&modules=TaskUser";
 
         if (!string.IsNullOrEmpty(projectName))
             apiUrl += $"&projectName={Uri.EscapeDataString(projectName)}";
-        if (!string.IsNullOrEmpty(memberName))
-            apiUrl += $"&memberName={Uri.EscapeDataString(memberName)}";
+        if (!string.IsNullOrEmpty(userId))
+            apiUrl += $"&userId={Uri.EscapeDataString(userId)}";
         if (!string.IsNullOrEmpty(priority))
             apiUrl += $"&priority={Uri.EscapeDataString(priority)}";
 
@@ -47,114 +88,19 @@ public class ProjectController : Controller
         if (!response.IsSuccessStatusCode)
             return View("Error");
 
-        var apiResponse = await response.Content.ReadFromJsonAsync<GetAllProjectsResponse>();
-        if (apiResponse == null)
+        var projectsApiResponse = await response.Content.ReadFromJsonAsync<GetAllProjectsResponse>();
+        if (projectsApiResponse == null)
             return View(new PaginatedProjectsViewModel());
 
         var viewModel = new PaginatedProjectsViewModel
         {
-            Projects = apiResponse.projects ?? new List<ProjectsResponse>(),
-            Page = apiResponse.page,
-            PageSize = apiResponse.pageSize,
-            TotalCount = apiResponse.totalCount
+            Projects = projectsApiResponse.projects ?? new List<ProjectsResponse>(),
+            Page = projectsApiResponse.page,
+            PageSize = projectsApiResponse.pageSize,
+            TotalCount = projectsApiResponse.totalCount
         };
 
         return View(viewModel);
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> ExportProjectsToCSV()
-    {
-        try
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Json(new { success = false, message = "User not found." });
-
-            var token = await GenerateJwtToken(user);
-
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/Project?page=1&pageSize=10000&modules=ProjectUser&modules=Tasks&modules=TaskUser";
-
-            var response = await client.GetAsync(apiUrl);
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorText = await response.Content.ReadAsStringAsync();
-                return Json(new { success = false, message = $"API error: {errorText}" });
-            }
-
-            var apiResponse = await response.Content.ReadFromJsonAsync<GetAllProjectsResponse>();
-            if (apiResponse == null || apiResponse.projects == null)
-            {
-                return Json(new { success = false, message = "No projects found to export." });
-            }
-
-            var csvContent = GenerateSimplifiedProjectsCSV(apiResponse.projects);
-
-            var timestamp = DateTime.Now.ToString("yyyyMMdd");
-            var filename = $"projects_export_{timestamp}.csv";
-
-            return File(System.Text.Encoding.UTF8.GetBytes(csvContent), "text/csv", filename);
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
-        }
-    }
-
-    private string GenerateSimplifiedProjectsCSV(List<ProjectsResponse> projects)
-    {
-        var csv = new StringBuilder();
-
-        csv.AppendLine("Project Name,Tasks,Task Priorities,Task Deadlines,Members");
-
-        foreach (var project in projects)
-        {
-            var allTaskNames = new List<string>();
-            var allTaskPriorities = new List<string>();
-            var allTaskDeadlines = new List<string>();
-
-            if (project.projectTasks != null)
-            {
-                foreach (var task in project.projectTasks)
-                {
-                    allTaskNames.Add(task.Title ?? "Untitled Task");
-                    allTaskPriorities.Add(task.PriorityStatus.ToString() ?? "Not Set");
-                    allTaskDeadlines.Add(task.DueDate?.ToString("yyyy-MM-dd") ?? "No Deadline");
-                }
-            }
-
-            var allMemberNames = new List<string>();
-            if (project.projectUsers != null)
-            {
-                allMemberNames.AddRange(project.projectUsers
-                    .Where(pu => !string.IsNullOrEmpty(pu.UserName))
-                    .Select(pu => pu.UserName));
-            }
-
-            var tasksString = string.Join("; ", allTaskNames);
-            var prioritiesString = string.Join("; ", allTaskPriorities);
-            var deadlinesString = string.Join("; ", allTaskDeadlines);
-            var membersString = string.Join("; ", allMemberNames);
-
-            csv.AppendLine(
-                $"\"{EscapeCsvField(project.Name)}\"," +
-                $"\"{EscapeCsvField(tasksString)}\"," +
-                $"\"{EscapeCsvField(prioritiesString)}\"," +
-                $"\"{EscapeCsvField(deadlinesString)}\"," +
-                $"\"{EscapeCsvField(membersString)}\""
-            );
-        }
-
-        return csv.ToString();
-    }
-
-    private string EscapeCsvField(string field)
-    {
-        if (string.IsNullOrEmpty(field)) return "";
-        return field.Replace("\"", "\"\"");
     }
 
     private async Task<string> GenerateJwtToken(IdentityUser user)
@@ -230,9 +176,9 @@ public class ProjectController : Controller
     }
 
     public async Task<IActionResult> ProjectDetails(Guid id, [FromQuery] string? taskName, [FromQuery] DateTime? taskStartDate,
-    [FromQuery] DateTime? taskEndDate, [FromQuery] string? taskPriority, [FromQuery] string? taskMemberName,
-    [FromQuery] string? taskSortBy = "Title", [FromQuery] string? taskSortOrder = "asc",
-    [FromQuery] int taskPage = 1, [FromQuery] int taskPageSize = 10)
+[FromQuery] DateTime? taskEndDate, [FromQuery] string? taskPriority, [FromQuery] string? taskUserId,
+[FromQuery] string? taskSortBy = "Title", [FromQuery] string? taskSortOrder = "asc",
+[FromQuery] int taskPage = 1, [FromQuery] int taskPageSize = 10)
     {
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Challenge();
@@ -257,8 +203,8 @@ public class ProjectController : Controller
         if (!string.IsNullOrEmpty(taskPriority))
             apiUrlBuilder.Append($"&taskPriority={Uri.EscapeDataString(taskPriority)}");
 
-        if (!string.IsNullOrEmpty(taskMemberName))
-            apiUrlBuilder.Append($"&taskMemberName={Uri.EscapeDataString(taskMemberName)}");
+        if (!string.IsNullOrEmpty(taskUserId))
+            apiUrlBuilder.Append($"&taskUserId={Uri.EscapeDataString(taskUserId)}");
 
         apiUrlBuilder.Append($"&taskSortBy={Uri.EscapeDataString(taskSortBy)}");
         apiUrlBuilder.Append($"&taskSortOrder={Uri.EscapeDataString(taskSortOrder)}");
@@ -303,7 +249,7 @@ public class ProjectController : Controller
                 TaskStartDate = taskStartDate,
                 TaskEndDate = taskEndDate,
                 TaskPriority = taskPriority,
-                TaskMemberName = taskMemberName,
+                TaskUserId = taskUserId,
                 TaskSortBy = taskSortBy,
                 TaskSortOrder = taskSortOrder,
                 TaskPage = taskPage,
@@ -1446,6 +1392,36 @@ public class ProjectController : Controller
         {
             return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
         }
+    }
+
+    public async Task<IActionResult> GetAllProjects(string projectName = "", string userId = "", string priority = "")
+    {
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser == null) return Json(new { success = false, message = "User not found" });
+
+        var token = await GenerateJwtToken(currentUser);
+
+        using var client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var apiUrl = $"{_configuration["APIURL"].TrimEnd('/')}/api/Project?page=1&pageSize=10000&modules=ProjectUser&modules=Tasks&modules=TaskUser";
+
+        if (!string.IsNullOrEmpty(projectName))
+            apiUrl += $"&projectName={Uri.EscapeDataString(projectName)}";
+        if (!string.IsNullOrEmpty(userId))
+            apiUrl += $"&userId={Uri.EscapeDataString(userId)}";
+        if (!string.IsNullOrEmpty(priority))
+            apiUrl += $"&priority={Uri.EscapeDataString(priority)}";
+
+        var response = await client.GetAsync(apiUrl);
+        if (!response.IsSuccessStatusCode)
+            return Json(new { success = false, message = "Failed to fetch projects" });
+
+        var apiResponse = await response.Content.ReadFromJsonAsync<GetAllProjectsResponse>();
+        if (apiResponse == null || apiResponse.projects == null)
+            return Json(new { success = false, message = "No projects found" });
+
+        return Json(new { success = true, projects = apiResponse.projects });
     }
 
     [HttpGet]

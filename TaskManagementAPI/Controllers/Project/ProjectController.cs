@@ -38,34 +38,37 @@ namespace TaskManagementAPI.Controllers
                 projectsQuery = projectsQuery.Where(p => p.Name.ToLower().Contains(form.projectName.ToLower()));
             }
 
-            // Filter by assigned member
-            if (!string.IsNullOrEmpty(form.memberName))
+            // Filter by assigned user ID
+            if (!string.IsNullOrEmpty(form.userId) && Guid.TryParse(form.userId, out Guid filterUserId))
             {
-                var lowerMemberName = form.memberName.ToLower();
-
-                var userProjectsByMember = _client.ProjectUserRepository
+                var currentUserId = Guid.Parse(userId);
+                var currentUserProjectIds = _client.ProjectUserRepository
                     .GetAll()
-                    .Where(pu => _userManager.Users
-                        .Any(u => u.Id == pu.UserId.ToString() &&
-                                 (u.UserName.ToLower().Contains(lowerMemberName) ||
-                                  u.Email.ToLower().Contains(lowerMemberName))))
+                    .Where(pu => pu.UserId == currentUserId)
                     .Select(pu => pu.ProjectId)
                     .Distinct()
                     .ToList();
 
-                var taskProjectsByMember = _client.TaskUserRepository
+                var allProjectUsers = _client.ProjectUserRepository
                     .GetAll()
-                    .Where(tu => _userManager.Users
-                        .Any(u => u.Id == tu.UserId.ToString() &&
-                                 (u.UserName.ToLower().Contains(lowerMemberName) ||
-                                  u.Email.ToLower().Contains(lowerMemberName))))
+                    .Where(pu => pu.UserId == filterUserId && currentUserProjectIds.Contains(pu.ProjectId))
+                    .Select(pu => pu.ProjectId)
+                    .Distinct()
+                    .ToList();
+
+                var allTaskUsers = _client.TaskUserRepository
+                    .GetAll()
+                    .Where(tu => tu.UserId == filterUserId &&
+                                _client.ProjectTaskRepository.GetAll()
+                                    .Any(t => currentUserProjectIds.Contains(t.ProjectId) &&
+                                             t.Id == tu.TaskId))
                     .Select(tu => _client.ProjectTaskRepository.GetById(tu.TaskId))
                     .Where(t => t != null)
                     .Select(t => t.ProjectId)
                     .Distinct()
                     .ToList();
 
-                var allFilteredProjectIds = userProjectsByMember.Union(taskProjectsByMember).Distinct().ToList();
+                var allFilteredProjectIds = allProjectUsers.Union(allTaskUsers).Distinct().ToList();
 
                 projectsQuery = projectsQuery.Where(p => allFilteredProjectIds.Contains(p.Id));
             }
@@ -299,20 +302,17 @@ namespace TaskManagementAPI.Controllers
                         tasksQuery = tasksQuery.Where(t => t.priorityStatus.ToString().ToLower() == form.taskPriority.ToLower());
                     }
 
-                    if (!string.IsNullOrEmpty(form.taskMemberName))
+                    // Filter by task user ID
+                    if (!string.IsNullOrEmpty(form.taskUserId) && Guid.TryParse(form.taskUserId, out Guid taskFilterUserId))
                     {
-                        var lowerTaskMemberName = form.taskMemberName.ToLower();
-                        var taskIdsByMember = _client.TaskUserRepository
+                        var taskIdsByUser = _client.TaskUserRepository
                             .GetAll()
-                            .Where(tu => _userManager.Users
-                                .Any(u => u.Id == tu.UserId.ToString() &&
-                                         (u.UserName.ToLower().Contains(lowerTaskMemberName) ||
-                                          u.Email.ToLower().Contains(lowerTaskMemberName))))
+                            .Where(tu => tu.UserId == taskFilterUserId)
                             .Select(tu => tu.TaskId)
                             .Distinct()
                             .ToList();
 
-                        tasksQuery = tasksQuery.Where(t => taskIdsByMember.Contains(t.Id));
+                        tasksQuery = tasksQuery.Where(t => taskIdsByUser.Contains(t.Id));
                     }
 
                     if (!string.IsNullOrEmpty(form.taskSortBy))
