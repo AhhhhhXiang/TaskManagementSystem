@@ -9,7 +9,7 @@ namespace TaskManagementSystem.Models.ViewModels
         public DateTime? TaskStartDate { get; set; }
         public DateTime? TaskEndDate { get; set; }
         public string? TaskPriority { get; set; }
-        public string? TaskMemberName { get; set; }
+        public string? TaskUserId { get; set; }
         public string? TaskSortBy { get; set; }
         public string? TaskSortOrder { get; set; }
         public int TaskPage { get; set; } = 1;
