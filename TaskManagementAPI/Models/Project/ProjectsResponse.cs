@@ -6,6 +6,7 @@ namespace TaskManagementAPI.Models.Project
 {
     public class ProjectsResponse
     {
+        public int indexNum { get; set; }
         public Guid Id { get; set; }
         public string Name { get; set; }
 

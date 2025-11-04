@@ -352,10 +352,11 @@ namespace TaskManagementAPI.Controllers
                         .Take(taskPageSize)
                         .ToList();
 
-                    var projectTasks = pagedTasks.Select(task =>
+                    var projectTasks = pagedTasks.Select((task, index) =>
                     {
                         var taskReturnModel = new ProjectTaskReturnModel
                         {
+                            indexNum = (taskPage - 1) * taskPageSize + index + 1,
                             Id = task.Id,
                             Title = task.Title,
                             Description = task.Description,
