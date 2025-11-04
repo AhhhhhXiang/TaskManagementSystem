@@ -10,6 +10,7 @@ namespace TaskManagement.Data.Migrations.Models
 {
     public class ProjectTaskReturnModel
     {
+        public int indexNum { get; set; }
         public Guid Id { get; set; }
         public string Title { get; set; }
         public string? Description { get; set; }

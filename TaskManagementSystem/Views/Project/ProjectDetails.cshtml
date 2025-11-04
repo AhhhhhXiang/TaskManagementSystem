@@ -8,8 +8,10 @@
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
         margin: 0;
         padding: 0;
-        height: 100vh;
-        overflow: hidden;
+        height: auto;
+        min-height: 100vh;
+        overflow-x: hidden;
+        overflow-y: auto;
     }
 
     .navbar {
@@ -234,66 +236,197 @@
         max-width: 300px;
     }
 
-    .tasks-table-container {
+    /* Table View Styles */
+    .table-view-container {
+        background-color: #1a1d23;
+        border-radius: 8px;
+        padding: 16px;
+        margin: 16px;
+        height: auto;
+        min-height: calc(100vh - 120px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .tasks-table-outer-container {
         flex: 1;
-        overflow: auto;
+        overflow: visible;
         background-color: #101204;
         border-radius: 8px;
         position: relative;
+        height: auto;
+        min-height: 200px;
+    }
+
+    .tasks-table-container {
+        overflow: visible;
+        height: auto;
+        max-height: none;
     }
 
     .tasks-table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 800px;
+        table-layout: auto;
     }
 
-        .tasks-table th {
-            background-color: #1a1d23;
-            padding: 12px 16px;
-            text-align: left;
-            font-weight: 600;
-            color: #9fadbc;
-            border-bottom: 1px solid #444;
-            cursor: pointer;
-            user-select: none;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            white-space: nowrap;
-        }
-
-            .tasks-table th:hover {
-                background-color: #2b2f36;
-            }
-
-            .tasks-table th.sort-asc::after {
-                content: " ↑";
-                color: #0079bf;
-                font-weight: bold;
-            }
-
-            .tasks-table th.sort-desc::after {
-                content: " ↓";
-                color: #0079bf;
-                font-weight: bold;
-            }
-
+        .tasks-table th,
         .tasks-table td {
             padding: 12px 16px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             color: #e9ecef;
             vertical-align: top;
+            word-wrap: break-word;
+            white-space: normal;
         }
 
         .tasks-table tbody tr {
-            transition: background-color 0.2s;
+            transition: background-color 0.2s ease;
             cursor: pointer;
         }
 
             .tasks-table tbody tr:hover {
-                background-color: rgba(255, 255, 255, 0.05);
+                background-color: rgba(255, 255, 255, 0.05) !important;
             }
+
+        .tasks-table th[onclick] {
+            position: relative;
+            padding-right: 24px !important;
+        }
+
+    .sort-indicator {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.5;
+        transition: opacity 0.2s ease;
+        font-size: 12px;
+    }
+
+    .tasks-table th[onclick]:hover .sort-indicator {
+        opacity: 0.8;
+    }
+
+    .tasks-table th[onclick].sort-asc .sort-indicator::after {
+        content: "▲";
+        color: #0079bf;
+    }
+
+    .tasks-table th[onclick].sort-desc .sort-indicator::after {
+        content: "▼";
+        color: #0079bf;
+    }
+
+    .tasks-table th[onclick].sort-asc,
+    .tasks-table th[onclick].sort-desc {
+        color: #0079bf;
+        background-color: rgba(0, 121, 191, 0.1);
+    }
+
+        .tasks-table th[onclick].sort-asc .sort-indicator,
+        .tasks-table th[onclick].sort-desc .sort-indicator {
+            opacity: 1;
+            font-weight: bold;
+        }
+
+    .tasks-table th {
+        background-color: #1a1d23;
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        color: #9fadbc;
+        border-bottom: 1px solid #444;
+        user-select: none;
+        position: static;
+        white-space: nowrap;
+    }
+
+        .tasks-table th[onclick] {
+            cursor: pointer;
+        }
+
+        .tasks-table th:not([onclick]) {
+            cursor: default;
+            padding-right: 16px !important;
+        }
+
+        .tasks-table td {
+            padding: 10px 12px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+            .tasks-table td:nth-child(1) {
+                min-width: 50px;
+                max-width: 50px;
+            }
+
+            .tasks-table td:nth-child(2) {
+                min-width: 120px;
+                max-width: 250px;
+            }
+
+            .tasks-table td:nth-child(3) {
+                min-width: 150px;
+                max-width: 200px;
+            }
+
+            .tasks-table td:nth-child(4) {
+                min-width: 150px;
+                max-width: 200px;
+            }
+
+            .tasks-table td:nth-child(5) {
+                min-width: 120px;
+                max-width: 150px;
+            }
+
+            .tasks-table td:nth-child(6) {
+                min-width: 100px;
+                max-width: 120px;
+            }
+
+            .tasks-table td:nth-child(7) {
+                min-width: 120px;
+                max-width: 150px;
+            }
+
+            .tasks-table td:nth-child(8) {
+                min-width: 150px;
+                max-width: 250px;
+            }
+
+    .table-user-avatar {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 9px;
+        margin-right: 4px;
+    }
+
+    .user-cell {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 2px;
+    }
+
+    .priority-badge,
+    .status-badge {
+        padding: 3px 6px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 500;
+        text-align: center;
+        min-width: 50px;
+        display: inline-block;
+    }
 
     /* Priority Badges */
     .priority-badge {
@@ -357,27 +490,6 @@
         color: #bf2600;
     }
 
-    /* User Avatars in Table */
-    .table-user-avatar {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 600;
-        font-size: 10px;
-        margin-right: 4px;
-    }
-
-    .user-cell {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        margin-bottom: 4px;
-    }
-
     .users-container {
         display: flex;
         flex-direction: column;
@@ -393,7 +505,7 @@
         margin-top: 16px;
         padding: 16px;
         flex-wrap: wrap;
-        min-height: 60px; /* Ensure enough space */
+        min-height: 60px;
     }
 
     .pagination-btn {
@@ -431,17 +543,18 @@
 
     /* Comments Section in Table */
     .comments-cell {
-        max-width: 200px;
+        max-width: 250px;
     }
 
     .comments-preview {
-        font-size: 12px;
+        font-size: 11px;
         color: #9fadbc;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        line-height: 1.4;
+        line-height: 1.3;
+        max-height: 2.6em;
     }
 
     .view-comments-btn {
@@ -449,10 +562,10 @@
         border: none;
         color: #0079bf;
         cursor: pointer;
-        font-size: 12px;
-        padding: 2px 4px;
-        border-radius: 3px;
-        margin-top: 4px;
+        font-size: 11px;
+        padding: 1px 3px;
+        border-radius: 2px;
+        margin-top: 2px;
     }
 
         .view-comments-btn:hover {
@@ -2328,6 +2441,153 @@
             background-color: rgba(255, 255, 255, 0.1);
         }
 
+    @@media (max-width: 1400px) {
+    .tasks-table th,
+    .tasks-table td {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+    
+    .tasks-table td:nth-child(1) {
+        min-width: 180px;
+        max-width: 250px;
+    }
+    
+    .priority-badge,
+    .status-badge {
+        font-size: 10px;
+        padding: 2px 5px;
+        min-width: 45px;
+    }
+}
+
+@@media (max-width: 1200px) {
+    .table-view-container {
+        margin: 12px;
+        padding: 12px;
+    }
+    
+    .tasks-table th,
+    .tasks-table td {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+    
+    .tasks-table td:nth-child(1) {
+        min-width: 150px;
+        max-width: 200px;
+    }
+    
+    .table-user-avatar {
+        width: 18px;
+        height: 18px;
+        font-size: 8px;
+    }
+    
+    .user-cell {
+        gap: 2px;
+    }
+}
+
+@@media (max-width: 992px) {
+    .table-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .filter-controls {
+        justify-content: flex-start;
+        width: 100%;
+    }
+    
+    .tasks-table {
+        font-size: 12px;
+    }
+    
+    .tasks-table th,
+    .tasks-table td {
+        padding: 5px 6px;
+    }
+    
+    .tasks-table td:nth-child(1) {
+        min-width: 120px;
+        max-width: 180px;
+    }
+    
+    .tasks-table td:nth-child(3),
+    .tasks-table td:nth-child(4) {
+        min-width: 120px;
+        max-width: 150px;
+    }
+}
+
+@@media (max-width: 768px) {
+    .table-view-container {
+        margin: 8px;
+        padding: 8px;
+    }
+    
+    .tasks-table-container {
+        margin: 0 -8px; /* Allow table to use full available width */
+        width: calc(100% + 16px);
+    }
+    
+    .tasks-table {
+        font-size: 11px;
+    }
+    
+    .tasks-table th,
+    .tasks-table td {
+        padding: 4px 5px;
+    }
+    
+    /* Further reduce column widths */
+    .tasks-table td:nth-child(1) { /* Task Name */
+        min-width: 100px;
+        max-width: 150px;
+    }
+    
+    .tasks-table td:nth-child(2) { /* Deadline */
+        min-width: 80px;
+        max-width: 100px;
+    }
+    
+    .priority-badge,
+    .status-badge {
+        font-size: 9px;
+        padding: 1px 3px;
+        min-width: 40px;
+    }
+    
+    .table-user-avatar {
+        width: 16px;
+        height: 16px;
+        font-size: 7px;
+    }
+}
+
+@@media (max-width: 576px) {
+    /* Hide less important columns on very small screens */
+    .tasks-table th:nth-child(5), /* Created Date */
+    .tasks-table td:nth-child(5),
+    .tasks-table th:nth-child(8), /* Comments */
+    .tasks-table td:nth-child(8) {
+        display: none;
+    }
+    
+    .table-view-container {
+        margin: 4px;
+        padding: 6px;
+    }
+    
+    .tasks-table th,
+    .tasks-table td {
+        padding: 3px 4px;
+        font-size: 10px;
+    }
+}
+
     /* Responsive Design */
     @@media (max-width: 1200px) {
         .table-view-container {
@@ -2970,252 +3230,262 @@
     </div>
 
     <!-- Tasks Table -->
-    <div class="tasks-table-container">
-        <table class="tasks-table">
-            <thead>
-                <tr>
-                    <th onclick="sortTable('title')" class="@(Model.TaskFilter.TaskSortBy == "title" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
-                        Task Name
-                        <span class="sort-indicator"></span>
-                    </th>
-                    <th onclick="sortTable('duedate')" class="@(Model.TaskFilter.TaskSortBy == "duedate" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
-                        Deadline
-                        <span class="sort-indicator"></span>
-                    </th>
-                    <th onclick="sortTable('createdby')" class="@(Model.TaskFilter.TaskSortBy == "createdby" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
-                        Created By
-                        <span class="sort-indicator"></span>
-                    </th>
-                    <th onclick="sortTable('assignedto')" class="@(Model.TaskFilter.TaskSortBy == "assignedto" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
-                        Assigned To
-                        <span class="sort-indicator"></span>
-                    </th>
-                    <th onclick="sortTable('createddatetime')" class="@(Model.TaskFilter.TaskSortBy == "createddatetime" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
-                        Created Date
-                        <span class="sort-indicator"></span>
-                    </th>
-                    <th onclick="sortTable('priority')" class="@(Model.TaskFilter.TaskSortBy == "priority" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
-                        Priority
-                        <span class="sort-indicator"></span>
-                    </th>
-                    <th onclick="sortTable('status')" class="@(Model.TaskFilter.TaskSortBy == "status" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
-                        Status
-                        <span class="sort-indicator"></span>
-                    </th>
-                    <th>Comments</th>
-                </tr>
-            </thead>
-            <tbody id="tasksTableBody">
-                @if (Model?.project?.projectTasks != null && Model.project.projectTasks.Any())
-                {
-                    foreach (var task in Model.project.projectTasks)
+    <div class="tasks-table-outer-container">
+        <div class="tasks-table-container">
+            <table class="tasks-table">
+                <thead>
+                    <tr>
+                        <th>
+                            #
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th onclick="sortTable('title')" class="@(Model.TaskFilter.TaskSortBy == "title" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
+                            Task Name
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th onclick="sortTable('duedate')" class="@(Model.TaskFilter.TaskSortBy == "duedate" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
+                            Deadline
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th onclick="sortTable('createdby')" class="@(Model.TaskFilter.TaskSortBy == "createdby" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
+                            Created By
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th onclick="sortTable('assignedto')" class="@(Model.TaskFilter.TaskSortBy == "assignedto" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
+                            Assigned To
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th onclick="sortTable('createddatetime')" class="@(Model.TaskFilter.TaskSortBy == "createddatetime" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
+                            Created Date
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th onclick="sortTable('priority')" class="@(Model.TaskFilter.TaskSortBy == "priority" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
+                            Priority
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th onclick="sortTable('status')" class="@(Model.TaskFilter.TaskSortBy == "status" ? $"sort-{Model.TaskFilter.TaskSortOrder}" : "")">
+                            Status
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th>Comments</th>
+                    </tr>
+                </thead>
+                <tbody id="tasksTableBody">
+                    @if (Model?.project?.projectTasks != null && Model.project.projectTasks.Any())
                     {
-                        <tr onclick="openTaskModal('@task.Id')">
-                            <td>
-                                <div style="font-weight: 500; margin-bottom: 4px;">@task.Title</div>
-                                @if (!string.IsNullOrEmpty(task.Description))
-                                {
-                                    <div style="font-size: 12px; color: #9fadbc;">@task.Description</div>
-                                }
-                                @if (task.CreatedBy == Model.currentUserId.ToString())
-                                {
-                                    <div style="font-size: 10px; color: #0079bf;">(Created by you)</div>
-                                }
-                            </td>
-                            <td>
-                                @{
-                                    var dueDateHtml = "-";
-                                    if (task.DueDate.HasValue)
+                        foreach (var task in Model.project.projectTasks)
+                        {
+                            <tr onclick="openTaskModal('@task.Id')">
+                                <!-- Add this new column for indexNum -->
+                                <td style="text-align: center; color: #9fadbc; font-weight: 500;">
+                                    @task.indexNum
+                                </td>
+                                <td>
+                                    <div style="font-weight: 500; margin-bottom: 4px;">@task.Title</div>
+                                    @if (!string.IsNullOrEmpty(task.Description))
                                     {
-                                        var date = task.DueDate.Value;
-                                        var today = DateTime.Today;
-                                        var diffDays = (date.Date - today).Days;
-                                        var formattedDate = date.ToString("dd MMM yyyy"); // Changed format
-
-                                        if (diffDays == 0)
-                                        {
-                                            dueDateHtml = "<span style=\"color: #ff6b6b; font-weight: 500;\">Today</span>";
-                                        }
-                                        else if (diffDays == 1)
-                                        {
-                                            dueDateHtml = "<span style=\"color: #ffa500; font-weight: 500;\">Tomorrow</span>";
-                                        }
-                                        else if (diffDays == -1)
-                                        {
-                                            dueDateHtml = "<span style=\"color: #ff6b6b; font-weight: 500;\">Yesterday</span>";
-                                        }
-                                        else if (diffDays < 0)
-                                        {
-                                            dueDateHtml = $"<span style=\"color: #ff6b6b; font-weight: 500;\">{formattedDate}</span>";
-                                        }
-                                        else if (diffDays <= 7)
-                                        {
-                                            dueDateHtml = $"<span style=\"color: #ffa500;\">{formattedDate}</span>";
-                                        }
-                                        else
-                                        {
-                                            dueDateHtml = formattedDate;
-                                        }
+                                        <div style="font-size: 12px; color: #9fadbc;">@task.Description</div>
                                     }
-                                }
-                                @Html.Raw(dueDateHtml)
-                            </td>
-                            <td>
-                                @{
-                                    var assignedByHtml = "";
-                                    if (task.CreatedBy == Model.currentUserId.ToString())
+                                    @if (task.CreatedBy == Model.currentUserId.ToString())
                                     {
-                                        assignedByHtml = "<span style=\"color: #0079bf; font-weight: 500; display: flex; align-items: center; gap: 6px;\">You</span>";
+                                        <div style="font-size: 10px; color: #0079bf;">(Created by you)</div>
                                     }
-                                    else
-                                    {
-                                        var creatorUser = Model.project.projectUsers?.FirstOrDefault(user => user.Id.ToString() == task.CreatedBy);
-                                        if (creatorUser != null)
-                                        {
-                                            var userIndex = Model.project.projectUsers?.ToList().IndexOf(creatorUser) ?? 0;
-                                            var colorIndex = (userIndex % 6) + 1;
-                                            var initials = creatorUser.UserName?.Length >= 2 ? creatorUser.UserName.Substring(0, 2).ToUpper() : creatorUser.UserName?.ToUpper() ?? "?";
-
-                                            assignedByHtml = $@"<div style=""display: flex; align-items: center; gap: 6px;"">
-                        <div class=""table-user-avatar avatar-color-{colorIndex}"" style=""width: 24px; height: 24px; font-size: 10px;"">
-                                        {initials}
-                        </div>
-                        <span>{creatorUser.UserName}</span>
-                        </div>";
-                                        }
-                                        else
-                                        {
-                                            assignedByHtml = "<span style=\"display: flex; align-items: center; gap: 6px;\">Project Owner</span>";
-                                        }
-                                    }
-                                }
-                                @Html.Raw(assignedByHtml)
-                            </td>
-                            <td>
-                                <div class="users-container">
+                                </td>
+                                <td>
                                     @{
-                                        var taskUsers = task.taskUsers ?? new List<UserReturnModel>();
-                                        if (!taskUsers.Any())
+                                        var dueDateHtml = "-";
+                                        if (task.DueDate.HasValue)
                                         {
-                                            <span style="color: #9fadbc; font-style: italic;">-</span>
-                                        }
-                                        else
-                                        {
-                                            var validTaskUsers = taskUsers.Where(taskUser =>
-                                            Model.project.projectUsers?.Any(projectUser => projectUser.Id == taskUser.Id) == true
-                                            ).ToList();
+                                            var date = task.DueDate.Value;
+                                            var today = DateTime.Today;
+                                            var diffDays = (date.Date - today).Days;
+                                            var formattedDate = date.ToString("dd MMM yyyy"); // Changed format
 
-                                            foreach (var user in validTaskUsers)
+                                            if (diffDays == 0)
                                             {
-                                                var userIndex = validTaskUsers.IndexOf(user);
-                                                var colorIndex = (userIndex % 6) + 1;
-                                                var initials = user.UserName?.Length >= 2 ? user.UserName.Substring(0, 2).ToUpper() : user.UserName?.ToUpper() ?? "?";
-
-                                                <div class="user-cell" title="@user.UserName">
-                                                    <div class="table-user-avatar avatar-color-@colorIndex">@initials</div>
-                                                    <span>@user.UserName</span>
-                                                </div>
+                                                dueDateHtml = "<span style=\"color: #ff6b6b; font-weight: 500;\">Today</span>";
+                                            }
+                                            else if (diffDays == 1)
+                                            {
+                                                dueDateHtml = "<span style=\"color: #ffa500; font-weight: 500;\">Tomorrow</span>";
+                                            }
+                                            else if (diffDays == -1)
+                                            {
+                                                dueDateHtml = "<span style=\"color: #ff6b6b; font-weight: 500;\">Yesterday</span>";
+                                            }
+                                            else if (diffDays < 0)
+                                            {
+                                                dueDateHtml = $"<span style=\"color: #ff6b6b; font-weight: 500;\">{formattedDate}</span>";
+                                            }
+                                            else if (diffDays <= 7)
+                                            {
+                                                dueDateHtml = $"<span style=\"color: #ffa500;\">{formattedDate}</span>";
+                                            }
+                                            else
+                                            {
+                                                dueDateHtml = formattedDate;
                                             }
                                         }
                                     }
-                                </div>
-                            </td>
-                            <td>@(task.CreatedDateTime?.ToString("dd MMM yyyy") ?? "Unknown")</td>
-                            <td>
-                                @{
-                                    var priorityClass = "";
-                                    var priorityText = "";
-                                    switch (task.PriorityStatus.ToString())
-                                    {
-                                        case "High":
-                                            priorityClass = "priority-high";
-                                            priorityText = "High";
-                                            break;
-                                        case "Medium":
-                                            priorityClass = "priority-medium";
-                                            priorityText = "Medium";
-                                            break;
-                                        case "Low":
-                                        default:
-                                            priorityClass = "priority-low";
-                                            priorityText = "Low";
-                                            break;
-                                    }
-                                }
-                                <span class="priority-badge @priorityClass">@priorityText</span>
-                            </td>
-                            <td>
-                                @{
-                                    var statusClass = "";
-                                    var statusText = "";
-                                    switch (task.ProgressStatus)
-                                    {
-                                        case TaskManagement.Data.Migrations.Models.TaskStatus.ToDo:
-                                            statusClass = "status-todo";
-                                            statusText = "To Do";
-                                            break;
-                                        case TaskManagement.Data.Migrations.Models.TaskStatus.InProgress:
-                                            statusClass = "status-inprogress";
-                                            statusText = "In Progress";
-                                            break;
-                                        case TaskManagement.Data.Migrations.Models.TaskStatus.Done:
-                                            statusClass = "status-done";
-                                            statusText = "Done";
-                                            break;
-                                        case TaskManagement.Data.Migrations.Models.TaskStatus.ToBeReviewed:
-                                            statusClass = "status-review";
-                                            statusText = "To be Reviewed";
-                                            break;
-                                        case TaskManagement.Data.Migrations.Models.TaskStatus.ToBeCorrected:
-                                            statusClass = "status-corrected";
-                                            statusText = "To be Corrected";
-                                            break;
-                                        default:
-                                            statusClass = "status-todo";
-                                            statusText = "To Do";
-                                            break;
-                                    }
-                                }
-                                <span class="status-badge @statusClass">@statusText</span>
-                            </td>
-                            <td class="comments-cell">
-                                @{
-                                    var comments = task.taskComments ?? new List<TaskCommentReturnModel>();
-                                    var commentsCount = comments.Count;
+                                    @Html.Raw(dueDateHtml)
+                                </td>
+                                <td>
+                                    @{
+                                        var assignedByHtml = "";
+                                        if (task.CreatedBy == Model.currentUserId.ToString())
+                                        {
+                                            assignedByHtml = "<span style=\"color: #0079bf; font-weight: 500; display: flex; align-items: center; gap: 6px;\">You</span>";
+                                        }
+                                        else
+                                        {
+                                            var creatorUser = Model.project.projectUsers?.FirstOrDefault(user => user.Id.ToString() == task.CreatedBy);
+                                            if (creatorUser != null)
+                                            {
+                                                var userIndex = Model.project.projectUsers?.ToList().IndexOf(creatorUser) ?? 0;
+                                                var colorIndex = (userIndex % 6) + 1;
+                                                var initials = creatorUser.UserName?.Length >= 2 ? creatorUser.UserName.Substring(0, 2).ToUpper() : creatorUser.UserName?.ToUpper() ?? "?";
 
-                                    if (commentsCount == 0)
-                                    {
-                                        <span style="color: #9fadbc; font-style: italic;">No comments</span>
+                                                assignedByHtml = $@"<div style=""display: flex; align-items: center; gap: 6px;"">
+                            <div class=""table-user-avatar avatar-color-{colorIndex}"" style=""width: 24px; height: 24px; font-size: 10px;"">
+                                            {initials}
+                            </div>
+                            <span>{creatorUser.UserName}</span>
+                            </div>";
+                                            }
+                                            else
+                                            {
+                                                assignedByHtml = "<span style=\"display: flex; align-items: center; gap: 6px;\">Project Owner</span>";
+                                            }
+                                        }
                                     }
-                                    else
-                                    {
-                                        var latestComment = comments.OrderByDescending(c => c.CreatedDateTime).FirstOrDefault();
-                                        var commentText = latestComment?.Comment ?? "Click to view comments";
+                                    @Html.Raw(assignedByHtml)
+                                </td>
+                                <td>
+                                    <div class="users-container">
+                                        @{
+                                            var taskUsers = task.taskUsers ?? new List<UserReturnModel>();
+                                            if (!taskUsers.Any())
+                                            {
+                                                <span style="color: #9fadbc; font-style: italic;">-</span>
+                                            }
+                                            else
+                                            {
+                                                var validTaskUsers = taskUsers.Where(taskUser =>
+                                                Model.project.projectUsers?.Any(projectUser => projectUser.Id == taskUser.Id) == true
+                                                ).ToList();
 
-                                        <div>
-                                            <div class="comments-preview" title="@commentText">
-                                                @commentText
+                                                foreach (var user in validTaskUsers)
+                                                {
+                                                    var userIndex = validTaskUsers.IndexOf(user);
+                                                    var colorIndex = (userIndex % 6) + 1;
+                                                    var initials = user.UserName?.Length >= 2 ? user.UserName.Substring(0, 2).ToUpper() : user.UserName?.ToUpper() ?? "?";
+
+                                                    <div class="user-cell" title="@user.UserName">
+                                                        <div class="table-user-avatar avatar-color-@colorIndex">@initials</div>
+                                                        <span>@user.UserName</span>
+                                                    </div>
+                                                }
+                                            }
+                                        }
+                                    </div>
+                                </td>
+                                <td>@(task.CreatedDateTime?.ToString("dd MMM yyyy") ?? "Unknown")</td>
+                                <td>
+                                    @{
+                                        var priorityClass = "";
+                                        var priorityText = "";
+                                        switch (task.PriorityStatus.ToString())
+                                        {
+                                            case "High":
+                                                priorityClass = "priority-high";
+                                                priorityText = "High";
+                                                break;
+                                            case "Medium":
+                                                priorityClass = "priority-medium";
+                                                priorityText = "Medium";
+                                                break;
+                                            case "Low":
+                                            default:
+                                                priorityClass = "priority-low";
+                                                priorityText = "Low";
+                                                break;
+                                        }
+                                    }
+                                    <span class="priority-badge @priorityClass">@priorityText</span>
+                                </td>
+                                <td>
+                                    @{
+                                        var statusClass = "";
+                                        var statusText = "";
+                                        switch (task.ProgressStatus)
+                                        {
+                                            case TaskManagement.Data.Migrations.Models.TaskStatus.ToDo:
+                                                statusClass = "status-todo";
+                                                statusText = "To Do";
+                                                break;
+                                            case TaskManagement.Data.Migrations.Models.TaskStatus.InProgress:
+                                                statusClass = "status-inprogress";
+                                                statusText = "In Progress";
+                                                break;
+                                            case TaskManagement.Data.Migrations.Models.TaskStatus.Done:
+                                                statusClass = "status-done";
+                                                statusText = "Done";
+                                                break;
+                                            case TaskManagement.Data.Migrations.Models.TaskStatus.ToBeReviewed:
+                                                statusClass = "status-review";
+                                                statusText = "To be Reviewed";
+                                                break;
+                                            case TaskManagement.Data.Migrations.Models.TaskStatus.ToBeCorrected:
+                                                statusClass = "status-corrected";
+                                                statusText = "To be Corrected";
+                                                break;
+                                            default:
+                                                statusClass = "status-todo";
+                                                statusText = "To Do";
+                                                break;
+                                        }
+                                    }
+                                    <span class="status-badge @statusClass">@statusText</span>
+                                </td>
+                                <td class="comments-cell">
+                                    @{
+                                        var comments = task.taskComments ?? new List<TaskCommentReturnModel>();
+                                        var commentsCount = comments.Count;
+
+                                        if (commentsCount == 0)
+                                        {
+                                            <span style="color: #9fadbc; font-style: italic;">No comments</span>
+                                        }
+                                        else
+                                        {
+                                            var latestComment = comments.OrderByDescending(c => c.CreatedDateTime).FirstOrDefault();
+                                            var commentText = latestComment?.Comment ?? "Click to view comments";
+
+                                            <div>
+                                                <div class="comments-preview" title="@commentText">
+                                                    @commentText
+                                                </div>
+                                                <button class="view-comments-btn" onclick="event.stopPropagation(); openTaskModal('@task.Id')">
+                                                    View all (@commentsCount)
+                                                </button>
                                             </div>
-                                            <button class="view-comments-btn" onclick="event.stopPropagation(); openTaskModal('@task.Id')">
-                                                View all (@commentsCount)
-                                            </button>
-                                        </div>
+                                        }
                                     }
-                                }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9" style="text-align: center; color: #9fadbc; padding: 40px;">
+                                No tasks found.
                             </td>
                         </tr>
                     }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="8" style="text-align: center; color: #9fadbc; padding: 40px;">
-                            No tasks found.
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Pagination -->
@@ -6484,6 +6754,7 @@
     // Generate CSV content from tasks
     function generateCSVContent(tasks) {
         const headers = [
+            '#',
             'Task Name',
             'Description',
             'Deadline',
@@ -6499,7 +6770,9 @@
 
         // Add data rows
         tasks.forEach(task => {
+            console.log(task);
             const row = [
+                escapeCsvField(task.indexNum || ''),
                 escapeCsvField(task.title || ''),
                 escapeCsvField(task.description || ''),
                 escapeCsvField(formatDateForCSV(task.dueDate)),
